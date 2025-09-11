@@ -81,7 +81,7 @@ img{-webkit-touch-callout:none}
   </div>
 
   <script>
-// SwipeTree with Cross-Device Labels
+// SwipeTree with Auto-Refreshing Cross-Device Labels
 (function(){
   'use strict';
   
@@ -101,7 +101,8 @@ img{-webkit-touch-callout:none}
     touchStart: null, 
     longPressTimer: null,
     namesMap: {},
-    labelCache: {}
+    labelCache: {},
+    lastLabelCheck: {} // Track when we last checked each person's label
   };
 
   const anchorImg = document.getElementById('anchorImg');
@@ -122,8 +123,17 @@ img{-webkit-touch-callout:none}
   const cacheBust = ()=> `?v=${Date.now()%1e7}`;
   function setURLHash(id){ try{ history.replaceState(null,'',`#${encodeURIComponent(id)}`); }catch{} }
 
-  // Cross-device label functions - FIXED TO MATCH OUR LABELS FUNCTION
-  async function getLabel(id) {
+  // Cross-device label functions with auto-refresh capability
+  async function getLabel(id, forceRefresh = false) {
+    const now = Date.now();
+    const lastCheck = state.lastLabelCheck[id] || 0;
+    const CACHE_TIME = 10000; // 10 seconds cache time
+    
+    // Use cache if recent and not forcing refresh
+    if (!forceRefresh && state.labelCache[id] && (now - lastCheck) < CACHE_TIME) {
+      return state.labelCache[id];
+    }
+    
     try {
       const bust = Date.now();
       const res = await fetch(`/.netlify/functions/labels?person=${encodeURIComponent(id)}&action=get&t=${bust}`, {
@@ -133,13 +143,20 @@ img{-webkit-touch-callout:none}
       });
       if (!res.ok) throw new Error('GET labels failed');
       const data = await res.json();
-      return { name: data.label || '', dob: data.timestamp || '' };
+      
+      const labelData = { name: data.label || '', dob: data.timestamp || '' };
+      state.labelCache[id] = labelData;
+      state.lastLabelCheck[id] = now;
+      
+      return labelData;
     } catch (e) {
       console.warn('Label fetch failed, using localStorage fallback:', e);
       // Fallback to localStorage
       try {
         const stored = localStorage.getItem(`swipetree.meta.${id}`);
-        return stored ? JSON.parse(stored) : { name: '', dob: '' };
+        const labelData = stored ? JSON.parse(stored) : { name: '', dob: '' };
+        state.labelCache[id] = labelData;
+        return labelData;
       } catch {
         return { name: '', dob: '' };
       }
@@ -160,11 +177,17 @@ img{-webkit-touch-callout:none}
         })
       });
       if (!res.ok) throw new Error('POST labels failed');
+      
+      // Update local cache immediately after successful save
+      state.labelCache[id] = { name, dob };
+      state.lastLabelCheck[id] = Date.now();
+      
       return res.json();
     } catch (e) {
       console.warn('Label save failed, using localStorage fallback:', e);
       // Fallback to localStorage
       localStorage.setItem(`swipetree.meta.${id}`, JSON.stringify({ name, dob }));
+      state.labelCache[id] = { name, dob };
       return { ok: true };
     }
   }
@@ -181,13 +204,12 @@ img{-webkit-touch-callout:none}
     localStorage.setItem(`swipetree.meta.${id}`, JSON.stringify(meta||{})); 
   }
   
-  async function displayNameFor(id){ 
-    if(state.namesMap[id]) return state.namesMap[id]; 
-    if(state.labelCache[id]) return state.labelCache[id].name || '';
+  // Enhanced displayNameFor with auto-refresh
+  async function displayNameFor(id, forceRefresh = false){ 
+    if(!forceRefresh && state.namesMap[id]) return state.namesMap[id]; 
     
     try {
-      const data = await getLabel(id);
-      state.labelCache[id] = { name: data.name || '', dob: data.dob || '' };
+      const data = await getLabel(id, forceRefresh);
       return data.name || '';
     } catch {
       const m = getSavedMeta(id); 
@@ -225,6 +247,7 @@ img{-webkit-touch-callout:none}
     const out=[]; for(let k=1;k<=MAX_CANDIDATES;k++){ const s=toStr(floor+k*sibStep,d); if(s!==baseId) out.push(s); } return out;
   }
 
+  // Enhanced setAnchor with automatic label refresh
   async function setAnchor(idStr, pushHistory=true){
     if(state.gridOpen) closeGrid();
     if(state.anchorId && pushHistory) state.historyStack.push(state.anchorId);
@@ -233,7 +256,8 @@ img{-webkit-touch-callout:none}
     anchorImg.src = ok ? (src+cacheBust()) : (PLACEHOLDER+cacheBust());
     anchorImg.classList.remove('highlight');
     
-    const name = await displayNameFor(idStr);
+    // Force refresh labels when navigating to a family member
+    const name = await displayNameFor(idStr, true);
     anchorName.textContent = name || '';
     
     requestAnimationFrame(()=>{ anchorImg.classList.add('highlight'); setTimeout(()=>anchorImg.classList.remove('highlight'),350); });
@@ -277,7 +301,8 @@ img{-webkit-touch-callout:none}
     const out=[]; 
     for(let i=0;i<ids.length;i++) {
       if(checks[i]) {
-        const name = await displayNameFor(ids[i]);
+        // Force refresh labels for grid display
+        const name = await displayNameFor(ids[i], true);
         out.push({id:ids[i], src:idToSrc(ids[i]), name});
       }
     }
@@ -289,10 +314,10 @@ img{-webkit-touch-callout:none}
     const p=parentOf(state.anchorId); const cards=[];
     if(p){ 
       const ok=await exists(idToSrc(p)); 
-      const name = await displayNameFor(p);
+      const name = await displayNameFor(p, true);
       cards.push({id:p, src: ok?idToSrc(p):PLACEHOLDER, name});
       const sp=p+'.1'; const ok2=await exists(idToSrc(sp)); 
-      const spouseName = await displayNameFor(sp);
+      const spouseName = await displayNameFor(sp, true);
       cards.push(ok2?{id:sp, src:idToSrc(sp), name:spouseName}:{id:'Parent2', src:PLACEHOLDER, name:''}); 
     }
     openGrid('Parents', cards, 'parents'); state.gridType='parents'; 
@@ -308,7 +333,7 @@ img{-webkit-touch-callout:none}
     const id=state.anchorId; 
     let meta;
     try {
-      meta = await getLabel(id);
+      meta = await getLabel(id, true); // Force refresh when opening edit
     } catch {
       meta = getSavedMeta(id) || {};
     }
@@ -334,7 +359,7 @@ img{-webkit-touch-callout:none}
       console.log('Label saved to localStorage fallback');
     }
     
-    state.labelCache[id] = { name, dob };
+    // Update display immediately
     anchorName.textContent=name||''; 
     closeEdit(); 
   });
