@@ -1,0 +1,8 @@
+# Netlify config — disable build step & publish repo root
+[build]
+  base = "."
+  command = ""     # explicitly no build
+  publish = "."
+
+[functions]
+  directory = "netlify/functions"
