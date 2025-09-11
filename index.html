@@ -122,44 +122,49 @@ img{-webkit-touch-callout:none}
   const cacheBust = ()=> `?v=${Date.now()%1e7}`;
   function setURLHash(id){ try{ history.replaceState(null,'',`#${encodeURIComponent(id)}`); }catch{} }
 
-  // Cross-device label functions - FIXED ENDPOINTS
+  // Cross-device label functions - FIXED TO MATCH OUR LABELS FUNCTION
   async function getLabel(id) {
     try {
       const bust = Date.now();
-      const res = await fetch(`/.netlify/functions/swipelabels?id=${encodeURIComponent(id)}&t=${bust}`, {
+      const res = await fetch(`/.netlify/functions/labels?person=${encodeURIComponent(id)}&action=get&t=${bust}`, {
         method: 'GET',
         cache: 'no-store',
         headers: { 'Accept': 'application/json' }
       });
       if (!res.ok) throw new Error('GET labels failed');
       const data = await res.json();
-      return data;
+      return { name: data.label || '', dob: data.timestamp || '' };
     } catch (e) {
       console.warn('Label fetch failed, using localStorage fallback:', e);
       // Fallback to localStorage
       try {
         const stored = localStorage.getItem(`swipetree.meta.${id}`);
-        return stored ? JSON.parse(stored) : { id, name: '', dob: '' };
+        return stored ? JSON.parse(stored) : { name: '', dob: '' };
       } catch {
-        return { id, name: '', dob: '' };
+        return { name: '', dob: '' };
       }
     }
   }
 
   async function setLabel(id, name, dob) {
     try {
-      const res = await fetch('/.netlify/functions/swipelabels', {
+      const res = await fetch('/.netlify/functions/labels', {
         method: 'POST',
         cache: 'no-store',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, name, dob })
+        body: JSON.stringify({ 
+          person: id, 
+          label: name,
+          timestamp: dob,
+          action: 'set'
+        })
       });
       if (!res.ok) throw new Error('POST labels failed');
       return res.json();
     } catch (e) {
       console.warn('Label save failed, using localStorage fallback:', e);
       // Fallback to localStorage
-      localStorage.setItem(`swipetree.meta.${id}`, JSON.stringify({ id, name, dob }));
+      localStorage.setItem(`swipetree.meta.${id}`, JSON.stringify({ name, dob }));
       return { ok: true };
     }
   }
@@ -323,8 +328,10 @@ img{-webkit-touch-callout:none}
     
     try {
       await setLabel(id, name, dob);
+      console.log('Label saved successfully via Netlify function');
     } catch {
       saveMeta(id, { name, dob });
+      console.log('Label saved to localStorage fallback');
     }
     
     state.labelCache[id] = { name, dob };
