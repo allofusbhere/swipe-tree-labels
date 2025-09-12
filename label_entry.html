@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SwipeTree - Mobile Label Entry</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+
+        .stats {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .id-input-section {
+            margin-bottom: 30px;
+        }
+
+        .id-input-section label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .id-input-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        #personId {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 18px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #loadBtn {
+            padding: 15px 25px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        #loadBtn:hover {
+            background: #5a67d8;
+        }
+
+        .image-container {
+            text-align: center;
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .person-image {
+            width: 200px;
+            height: 200px;
+            border-radius: 15px;
+            object-fit: cover;
+            border: 4px solid #667eea;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+
+        .image-error {
+            width: 200px;
+            height: 200px;
+            border-radius: 15px;
+            border: 2px dashed #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 14px;
+            text-align: center;
+            background: #f9f9f9;
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #38a169;
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+        }
+
+        .file-controls {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .file-controls h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 18px;
+        }
+
+        .file-btn {
+            width: 100%;
+            padding: 15px;
+            margin-bottom: 10px;
+            background: #764ba2;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .file-btn:hover {
+            background: #6a4190;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .success-message {
+            background: #c6f6d5;
+            border: 1px solid #9ae6b4;
+            color: #276749;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .current-person {
+            background: #ebf8ff;
+            border: 1px solid #90cdf4;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .current-person h3 {
+            color: #2b6cb0;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 Mobile Label Entry</h1>
+            <p>Add family member details by ID</p>
+        </div>
+
+        <div class="stats">
+            <div>Labels This Session: <strong id="sessionCount">0</strong></div>
+            <div>Total Labels: <strong id="totalCount">0</strong></div>
+        </div>
+
+        <div class="success-message" id="successMessage">
+            ✅ Label saved successfully!
+        </div>
+
+        <div class="id-input-section">
+            <label for="personId">Enter Person ID#</label>
+            <div class="id-input-container">
+                <input type="text" id="personId" placeholder="148288" maxlength="6">
+                <button id="loadBtn">Load</button>
+            </div>
+        </div>
+
+        <div class="image-container" id="imageContainer">
+            <div class="current-person">
+                <h3>Person ID: <span id="currentPersonId"></span></h3>
+            </div>
+            <img id="personImage" class="person-image" alt="Person photo">
+            <div id="imageError" class="image-error" style="display: none;">
+                Image not found<br>
+                <small>Will still save label data</small>
+            </div>
+        </div>
+
+        <div class="form-section" id="formSection">
+            <form id="labelForm">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" placeholder="John">
+                </div>
+
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" placeholder="Smith">
+                </div>
+
+                <div class="form-group">
+                    <label for="dateOfBirth">Date of Birth</label>
+                    <input type="text" id="dateOfBirth" placeholder="7/8/1953">
+                </div>
+
+                <div class="form-group">
+                    <label for="city">City</label>
+                    <input type="text" id="city" placeholder="McDonough">
+                </div>
+
+                <div class="form-group">
+                    <label for="state">State</label>
+                    <input type="text" id="state" placeholder="GA" maxlength="2">
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary">💾 Save & Next</button>
+                    <button type="button" class="btn btn-secondary" id="clearBtn">🔄 Clear</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="file-controls">
+            <h3>📁 Label Files</h3>
+            <button class="file-btn" id="downloadBtn">⬇️ Download Labels File</button>
+            <button class="file-btn" onclick="document.getElementById('fileInput').click()">⬆️ Upload Labels File</button>
+            <input type="file" id="fileInput" accept=".json">
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let labels = {};
+        let sessionCount = 0;
+        const imageBaseUrl = 'https://raw.githubusercontent.com/allofushere/family-tree-images/main/';
+
+        // DOM elements
+        const personIdInput = document.getElementById('personId');
+        const loadBtn = document.getElementById('loadBtn');
+        const imageContainer = document.getElementById('imageContainer');
+        const personImage = document.getElementById('personImage');
+        const imageError = document.getElementById('imageError');
+        const formSection = document.getElementById('formSection');
+        const labelForm = document.getElementById('labelForm');
+        const currentPersonId = document.getElementById('currentPersonId');
+        const successMessage = document.getElementById('successMessage');
+        const sessionCountElement = document.getElementById('sessionCount');
+        const totalCountElement = document.getElementById('totalCount');
+
+        // Load person by ID
+        loadBtn.addEventListener('click', loadPerson);
+        personIdInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loadPerson();
+        });
+
+        function loadPerson() {
+            const personId = personIdInput.value.trim();
+            
+            if (!personId || personId.length !== 6) {
+                alert('Please enter a 6-digit ID number');
+                return;
+            }
+
+            // Show image container and form
+            imageContainer.style.display = 'block';
+            formSection.style.display = 'block';
+            currentPersonId.textContent = personId;
+
+            // Load image
+            const imageUrl = `${imageBaseUrl}${personId}.jpg`;
+            personImage.src = imageUrl;
+            personImage.style.display = 'block';
+            imageError.style.display = 'none';
+
+            // Handle image load error
+            personImage.onerror = function() {
+                personImage.style.display = 'none';
+                imageError.style.display = 'flex';
+            };
+
+            // Pre-fill form if label exists
+            if (labels[personId]) {
+                const label = labels[personId];
+                document.getElementById('firstName').value = label.firstName || '';
+                document.getElementById('lastName').value = label.lastName || '';
+                document.getElementById('dateOfBirth').value = label.dateOfBirth || '';
+                document.getElementById('city').value = label.city || '';
+                document.getElementById('state').value = label.state || '';
+            } else {
+                // Clear form for new entry
+                labelForm.reset();
+            }
+
+            // Focus on first name field
+            document.getElementById('firstName').focus();
+        }
+
+        // Save label
+        labelForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const personId = currentPersonId.textContent;
+            const labelData = {
+                firstName: document.getElementById('firstName').value.trim(),
+                lastName: document.getElementById('lastName').value.trim(),
+                dateOfBirth: document.getElementById('dateOfBirth').value.trim(),
+                city: document.getElementById('city').value.trim(),
+                state: document.getElementById('state').value.trim().toUpperCase()
+            };
+
+            // Only save if at least one field is filled
+            if (Object.values(labelData).some(value => value)) {
+                const isNewLabel = !labels[personId];
+                labels[personId] = labelData;
+                
+                if (isNewLabel) sessionCount++;
+                updateCounts();
+                showSuccess();
+                
+                // Clear form and prepare for next entry
+                setTimeout(() => {
+                    labelForm.reset();
+                    personIdInput.value = '';
+                    imageContainer.style.display = 'none';
+                    formSection.style.display = 'none';
+                    personIdInput.focus();
+                }, 1500);
+            }
+        });
+
+        // Clear form
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            labelForm.reset();
+            document.getElementById('firstName').focus();
+        });
+
+        // File operations
+        document.getElementById('downloadBtn').addEventListener('click', downloadLabels);
+        document.getElementById('fileInput').addEventListener('change', uploadLabels);
+
+        function downloadLabels() {
+            if (Object.keys(labels).length === 0) {
+                alert('No labels to download');
+                return;
+            }
+
+            const data = {
+                created: new Date().toISOString(),
+                totalLabels: Object.keys(labels).length,
+                labels: labels
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `family_labels_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function uploadLabels(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    labels = data.labels || data; // Handle different file formats
+                    sessionCount = 0; // Reset session count
+                    updateCounts();
+                    alert(`Loaded ${Object.keys(labels).length} labels successfully!`);
+                } catch (error) {
+                    alert('Error reading labels file. Please check the file format.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function updateCounts() {
+            sessionCountElement.textContent = sessionCount;
+            totalCountElement.textContent = Object.keys(labels).length;
+        }
+
+        function showSuccess() {
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        // Initialize counts
+        updateCounts();
+    </script>
+</body>
+</html>
