@@ -20,6 +20,10 @@ img{-webkit-touch-callout:none}
 #anchorWrap{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem}
 #anchorImg{max-width:min(75vw,560px);max-height:min(65vh,560px);object-fit:contain;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.6);border:1px solid #222}
 .name{font-size:1.1rem;opacity:.95;min-height:1.3em}
+.details{font-size:0.9rem;opacity:.75;text-align:center;margin-top:.25rem}
+.details .date{color:#7aa8ff}
+.details .location{color:#90ee90}
+.details .notes{font-style:italic;margin-top:.25rem;opacity:.6}
 #gridOverlay{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;z-index:4;align-items:center}
 #gridOverlay.hidden{display:none}
 .gridHeader{padding:.5rem 1rem;border-bottom:1px solid #222;width:100%;max-width:980px}
@@ -29,6 +33,7 @@ img{-webkit-touch-callout:none}
 .tile:active{transform:scale(.98)}
 .tile img{width:100%;height:26vh;object-fit:contain;background:#000;border-radius:10px}
 .tile .label{font-size:.95rem;opacity:.95;min-height:1.2em}
+.tile .tile-details{font-size:.8rem;opacity:.7;text-align:center;margin-top:.25rem}
 .highlight{outline:3px solid #7aa8ff;outline-offset:2px}
 .noselect{user-select:none;-webkit-user-select:none;-ms-user-select:none}
 .editOverlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:10}
@@ -52,6 +57,7 @@ img{-webkit-touch-callout:none}
       <div id="anchorWrap">
         <img id="anchorImg" alt="Family Member" class="noselect">
         <div id="anchorName" class="name"></div>
+        <div id="anchorDetails" class="details"></div>
       </div>
       
       <div id="gridOverlay" class="hidden">
@@ -73,6 +79,14 @@ img{-webkit-touch-callout:none}
         <label>Date of Birth</label>
         <input id="editDob" type="text" placeholder="e.g., 1990-01-15">
       </div>
+      <div class="editRow">
+        <label>Location</label>
+        <input id="editLocation" type="text" placeholder="City, State">
+      </div>
+      <div class="editRow">
+        <label>Notes</label>
+        <input id="editNotes" type="text" placeholder="Additional details">
+      </div>
       <div class="editActions">
         <button id="editCancel" class="btn">Cancel</button>
         <button id="editSave" class="btn">Save</button>
@@ -81,12 +95,12 @@ img{-webkit-touch-callout:none}
   </div>
 
   <script>
-// SwipeTree with Auto-Refreshing Cross-Device Labels
+// SwipeTree with family_labels.json integration
 (function(){
   'use strict';
   
   const params = new URLSearchParams(location.search);
-  const DEFAULT_IMG_BASE = 'https://allofusbhere.github.io/family-tree-images/';
+  const DEFAULT_IMG_BASE = 'https://raw.githubusercontent.com/allofusbhere/family-tree-images/main/';
   const IMG_BASE = (params.get('imgbase') || DEFAULT_IMG_BASE).replace(/\/?$/, '/');
   const IMG_EXT = '.jpg';
   const PLACEHOLDER_NAME = 'placeholder.jpg';
@@ -101,13 +115,14 @@ img{-webkit-touch-callout:none}
     touchStart: null, 
     longPressTimer: null,
     namesMap: {},
-    labelCache: {},
-    lastLabelCheck: {} // Track when we last checked each person's label
+    familyLabels: {},
+    lastLabelsCheck: 0
   };
 
   const anchorImg = document.getElementById('anchorImg');
   const anchorWrap = document.getElementById('anchorWrap');
   const anchorName = document.getElementById('anchorName');
+  const anchorDetails = document.getElementById('anchorDetails');
   const gridOverlay = document.getElementById('gridOverlay');
   const grid = document.getElementById('grid');
   const gridTitle = document.getElementById('gridTitle');
@@ -115,6 +130,8 @@ img{-webkit-touch-callout:none}
   const editOverlay = document.getElementById('editOverlay');
   const editName = document.getElementById('editName');
   const editDob = document.getElementById('editDob');
+  const editLocation = document.getElementById('editLocation');
+  const editNotes = document.getElementById('editNotes');
   const editCancel = document.getElementById('editCancel');
   const editSave = document.getElementById('editSave');
 
@@ -123,98 +140,100 @@ img{-webkit-touch-callout:none}
   const cacheBust = ()=> `?v=${Date.now()%1e7}`;
   function setURLHash(id){ try{ history.replaceState(null,'',`#${encodeURIComponent(id)}`); }catch{} }
 
-  // Cross-device label functions with auto-refresh capability
-  async function getLabel(id, forceRefresh = false) {
+  // Load family labels from GitHub
+  async function loadFamilyLabels() {
     const now = Date.now();
-    const lastCheck = state.lastLabelCheck[id] || 0;
-    const CACHE_TIME = 10000; // 10 seconds cache time
+    const CACHE_TIME = 30000; // 30 seconds cache time
     
-    // Use cache if recent and not forcing refresh
-    if (!forceRefresh && state.labelCache[id] && (now - lastCheck) < CACHE_TIME) {
-      return state.labelCache[id];
+    // Use cache if recent
+    if (state.familyLabels && (now - state.lastLabelsCheck) < CACHE_TIME) {
+      return state.familyLabels;
     }
     
     try {
-      const bust = Date.now();
-      const res = await fetch(`/.netlify/functions/labels?person=${encodeURIComponent(id)}&action=get&t=${bust}`, {
-        method: 'GET',
-        cache: 'no-store',
-        headers: { 'Accept': 'application/json' }
+      const response = await fetch(`https://raw.githubusercontent.com/allofusbhere/swipe-tree-labels/main/family_labels.json?t=${now}`, {
+        cache: 'no-store'
       });
-      if (!res.ok) throw new Error('GET labels failed');
-      const data = await res.json();
       
-      const labelData = { name: data.label || '', dob: data.timestamp || '' };
-      state.labelCache[id] = labelData;
-      state.lastLabelCheck[id] = now;
-      
-      return labelData;
-    } catch (e) {
-      console.warn('Label fetch failed, using localStorage fallback:', e);
-      // Fallback to localStorage
-      try {
-        const stored = localStorage.getItem(`swipetree.meta.${id}`);
-        const labelData = stored ? JSON.parse(stored) : { name: '', dob: '' };
-        state.labelCache[id] = labelData;
-        return labelData;
-      } catch {
-        return { name: '', dob: '' };
+      if (response.ok) {
+        const data = await response.json();
+        state.familyLabels = data || {};
+        state.lastLabelsCheck = now;
+        console.log('Loaded family labels from GitHub:', Object.keys(state.familyLabels).length, 'entries');
+        return state.familyLabels;
+      } else {
+        console.warn('Could not load family_labels.json, using existing cache');
+        return state.familyLabels || {};
       }
+    } catch (error) {
+      console.warn('Error loading family labels:', error);
+      return state.familyLabels || {};
     }
   }
 
-  async function setLabel(id, name, dob) {
-    try {
-      const res = await fetch('/.netlify/functions/labels', {
-        method: 'POST',
-        cache: 'no-store',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          person: id, 
-          label: name,
-          timestamp: dob,
-          action: 'set'
-        })
-      });
-      if (!res.ok) throw new Error('POST labels failed');
-      
-      // Update local cache immediately after successful save
-      state.labelCache[id] = { name, dob };
-      state.lastLabelCheck[id] = Date.now();
-      
-      return res.json();
-    } catch (e) {
-      console.warn('Label save failed, using localStorage fallback:', e);
-      // Fallback to localStorage
-      localStorage.setItem(`swipetree.meta.${id}`, JSON.stringify({ name, dob }));
-      state.labelCache[id] = { name, dob };
-      return { ok: true };
+  // Get label data for a person
+  async function getPersonData(id) {
+    await loadFamilyLabels();
+    const data = state.familyLabels[id];
+    if (data) {
+      return {
+        name: data.name || '',
+        birthDate: data.birthDate || '',
+        location: data.location || '',
+        notes: data.notes || ''
+      };
     }
-  }
-
-  function getSavedMeta(id){ 
-    try{ 
-      return JSON.parse(localStorage.getItem(`swipetree.meta.${id}`)||'null'); 
-    } catch {
-      return null;
-    } 
-  }
-  
-  function saveMeta(id, meta){ 
-    localStorage.setItem(`swipetree.meta.${id}`, JSON.stringify(meta||{})); 
-  }
-  
-  // Enhanced displayNameFor with auto-refresh
-  async function displayNameFor(id, forceRefresh = false){ 
-    if(!forceRefresh && state.namesMap[id]) return state.namesMap[id]; 
     
+    // Fallback to localStorage
     try {
-      const data = await getLabel(id, forceRefresh);
-      return data.name || '';
-    } catch {
-      const m = getSavedMeta(id); 
-      return m && m.name ? m.name : ''; 
+      const stored = localStorage.getItem(`swipetree.meta.${id}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return {
+          name: parsed.name || '',
+          birthDate: parsed.dob || '',
+          location: '',
+          notes: ''
+        };
+      }
+    } catch (e) {
+      console.warn('Error reading localStorage:', e);
     }
+    
+    return { name: '', birthDate: '', location: '', notes: '' };
+  }
+
+  // Save label data (saves to localStorage, GitHub sync handled by mobile app)
+  function savePersonData(id, data) {
+    try {
+      localStorage.setItem(`swipetree.meta.${id}`, JSON.stringify({
+        name: data.name,
+        dob: data.birthDate
+      }));
+      console.log('Saved to localStorage for ID:', id);
+    } catch (e) {
+      console.warn('Error saving to localStorage:', e);
+    }
+  }
+
+  // Display name for a person
+  async function displayNameFor(id) {
+    const data = await getPersonData(id);
+    return data.name || '';
+  }
+
+  // Format details display
+  function formatDetails(data) {
+    const parts = [];
+    if (data.birthDate) parts.push(`<span class="date">${data.birthDate}</span>`);
+    if (data.location) parts.push(`<span class="location">${data.location}</span>`);
+    
+    let details = parts.join(' | ');
+    if (data.notes) {
+      details += `<div class="notes">${data.notes}</div>`;
+    }
+    
+    return details;
   }
 
   async function tryLoadNamesMap(){
@@ -247,7 +266,7 @@ img{-webkit-touch-callout:none}
     const out=[]; for(let k=1;k<=MAX_CANDIDATES;k++){ const s=toStr(floor+k*sibStep,d); if(s!==baseId) out.push(s); } return out;
   }
 
-  // Enhanced setAnchor with automatic label refresh
+  // Enhanced setAnchor with family labels
   async function setAnchor(idStr, pushHistory=true){
     if(state.gridOpen) closeGrid();
     if(state.anchorId && pushHistory) state.historyStack.push(state.anchorId);
@@ -256,9 +275,10 @@ img{-webkit-touch-callout:none}
     anchorImg.src = ok ? (src+cacheBust()) : (PLACEHOLDER+cacheBust());
     anchorImg.classList.remove('highlight');
     
-    // Force refresh labels when navigating to a family member
-    const name = await displayNameFor(idStr, true);
-    anchorName.textContent = name || '';
+    // Load and display family data
+    const personData = await getPersonData(idStr);
+    anchorName.textContent = personData.name || '';
+    anchorDetails.innerHTML = formatDetails(personData);
     
     requestAnimationFrame(()=>{ anchorImg.classList.add('highlight'); setTimeout(()=>anchorImg.classList.remove('highlight'),350); });
   }
@@ -267,7 +287,8 @@ img{-webkit-touch-callout:none}
     gridTitle.textContent=title; grid.innerHTML=''; grid.classList.remove('parents'); if(kind==='parents') grid.classList.add('parents');
     cards.forEach(c=>{
       const tile=document.createElement('div'); tile.className='tile noselect'; tile.dataset.id=c.id;
-      tile.innerHTML=`<img alt="${c.id}" src="${c.src}${cacheBust()}"><div class="label">${c.name||''}</div>`;
+      const detailsHtml = c.details ? `<div class="tile-details">${c.details}</div>` : '';
+      tile.innerHTML=`<img alt="${c.id}" src="${c.src}${cacheBust()}"><div class="label">${c.name||''}</div>${detailsHtml}`;
       tile.addEventListener('click', async ()=>{ closeGrid(); await setAnchor(c.id); });
       grid.appendChild(tile);
     });
@@ -301,44 +322,69 @@ img{-webkit-touch-callout:none}
     const out=[]; 
     for(let i=0;i<ids.length;i++) {
       if(checks[i]) {
-        // Force refresh labels for grid display
-        const name = await displayNameFor(ids[i], true);
-        out.push({id:ids[i], src:idToSrc(ids[i]), name});
+        const personData = await getPersonData(ids[i]);
+        const details = personData.birthDate || personData.location ? 
+          [personData.birthDate, personData.location].filter(Boolean).join(' | ') : '';
+        out.push({
+          id: ids[i], 
+          src: idToSrc(ids[i]), 
+          name: personData.name,
+          details: details
+        });
       }
     }
     return out; 
   }
+
   async function handleChildrenSwipe(){ openGrid('Children', await existingCards(childrenOf(state.anchorId)), 'children'); state.gridType='children'; }
   async function handleSiblingsSwipe(){ openGrid('Siblings', await existingCards(siblingsOf(state.anchorId)), 'siblings'); state.gridType='siblings'; }
   async function handleParentsSwipe(){ 
     const p=parentOf(state.anchorId); const cards=[];
     if(p){ 
       const ok=await exists(idToSrc(p)); 
-      const name = await displayNameFor(p, true);
-      cards.push({id:p, src: ok?idToSrc(p):PLACEHOLDER, name});
+      const personData = await getPersonData(p);
+      const details = personData.birthDate || personData.location ? 
+        [personData.birthDate, personData.location].filter(Boolean).join(' | ') : '';
+      cards.push({
+        id: p, 
+        src: ok ? idToSrc(p) : PLACEHOLDER, 
+        name: personData.name,
+        details: details
+      });
+      
       const sp=p+'.1'; const ok2=await exists(idToSrc(sp)); 
-      const spouseName = await displayNameFor(sp, true);
-      cards.push(ok2?{id:sp, src:idToSrc(sp), name:spouseName}:{id:'Parent2', src:PLACEHOLDER, name:''}); 
+      const spouseData = await getPersonData(sp);
+      const spouseDetails = spouseData.birthDate || spouseData.location ? 
+        [spouseData.birthDate, spouseData.location].filter(Boolean).join(' | ') : '';
+      cards.push(ok2 ? {
+        id: sp, 
+        src: idToSrc(sp), 
+        name: spouseData.name,
+        details: spouseDetails
+      } : {
+        id: 'Parent2', 
+        src: PLACEHOLDER, 
+        name: '',
+        details: ''
+      }); 
     }
     openGrid('Parents', cards, 'parents'); state.gridType='parents'; 
   }
+
   async function handleSpouseSwipe(){ 
     const p=getIdParts(state.anchorId); 
     const t=p.isSpouse?p.baseId:p.baseId+'.1'; 
     if(await exists(idToSrc(t))) await setAnchor(t); 
   }
 
-  // SoftEdit overlay
+  // Edit overlay
   async function openEdit(){ 
     const id=state.anchorId; 
-    let meta;
-    try {
-      meta = await getLabel(id, true); // Force refresh when opening edit
-    } catch {
-      meta = getSavedMeta(id) || {};
-    }
-    editName.value = meta.name || ''; 
-    editDob.value = meta.dob || ''; 
+    const data = await getPersonData(id);
+    editName.value = data.name || ''; 
+    editDob.value = data.birthDate || '';
+    editLocation.value = data.location || '';
+    editNotes.value = data.notes || '';
     editOverlay.classList.remove('hidden'); 
     setTimeout(()=>editName.focus(),0); 
   }
@@ -348,19 +394,18 @@ img{-webkit-touch-callout:none}
   editOverlay.addEventListener('click', (e)=>{ if(e.target===editOverlay) closeEdit(); });
   editSave.addEventListener('click', async ()=>{ 
     const id=state.anchorId; 
-    const name=editName.value.trim(); 
-    const dob=editDob.value.trim(); 
+    const data = {
+      name: editName.value.trim(),
+      birthDate: editDob.value.trim(),
+      location: editLocation.value.trim(),
+      notes: editNotes.value.trim()
+    };
     
-    try {
-      await setLabel(id, name, dob);
-      console.log('Label saved successfully via Netlify function');
-    } catch {
-      saveMeta(id, { name, dob });
-      console.log('Label saved to localStorage fallback');
-    }
+    savePersonData(id, data);
     
     // Update display immediately
-    anchorName.textContent=name||''; 
+    anchorName.textContent = data.name || '';
+    anchorDetails.innerHTML = formatDetails(data);
     closeEdit(); 
   });
 
@@ -384,6 +429,7 @@ img{-webkit-touch-callout:none}
 
   (async function boot(){ 
     await tryLoadNamesMap(); 
+    await loadFamilyLabels(); // Load family labels on startup
     let start=decodeURIComponent((location.hash||'').replace(/^#/,'')).trim(); 
     if(!start) start='100000'; 
     await setAnchor(start,false); 
