@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwipeTree Family Labels</title>
+    <title>SwipeTree Label Manager</title>
     <style>
         * {
             margin: 0;
@@ -49,7 +49,7 @@
             padding: 30px 20px;
         }
         
-        .github-section {
+        .auth-section {
             background: #f8f9fa;
             border-radius: 15px;
             padding: 20px;
@@ -66,7 +66,7 @@
         }
         
         .section-title::before {
-            content: "🔐";
+            content: "🌳";
             margin-right: 8px;
         }
         
@@ -139,15 +139,21 @@
         .form-row {
             display: flex;
             gap: 15px;
+            margin-bottom: 15px;
         }
         
         .form-row .form-group {
             flex: 1;
+            margin-bottom: 0;
         }
         
         .btn-add {
             background: linear-gradient(135deg, #2196F3, #1976D2);
-            margin-top: 10px;
+            margin: 15px auto 0 auto;
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            text-align: center;
         }
         
         .btn-add:hover {
@@ -250,6 +256,10 @@
                 gap: 0;
             }
             
+            .form-row .form-group {
+                margin-bottom: 15px;
+            }
+            
             .btn-add {
                 margin: 20px auto 0 auto;
                 width: 100%;
@@ -264,50 +274,50 @@
     <div class="container">
         <div class="header">
             <h1>🌳 SwipeTree Family Labels</h1>
-            <p>Add family members to your tree</p>
+            <p>Manage your SwipeTree family data</p>
         </div>
         
         <div class="main-content">
-            <!-- GitHub Authentication Section -->
-            <div class="github-section">
-                <div class="section-title">GitHub Connection</div>
+            <!-- Authentication Section -->
+            <div class="auth-section">
+                <div class="section-title">Connect to SwipeTree</div>
                 <div class="form-group">
-                    <label for="github-token">Personal Access Token</label>
-                    <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+                    <label for="access-token">Access Token</label>
+                    <input type="password" id="access-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
                 </div>
-                <div class="form-group">
-                    <label for="repo-path">Repository (username/repo-name)</label>
-                    <input type="text" id="repo-path" placeholder="your-username/swipe-tree-labels">
-                </div>
-                <button class="btn" onclick="connectGitHub()">Connect to GitHub</button>
-                <div id="github-status"></div>
+                <button class="btn" onclick="connectToSwipeTree()">Connect to SwipeTree</button>
+                <div id="connection-status"></div>
             </div>
             
             <!-- Add Labels Section -->
             <div class="labels-section hidden" id="labels-section">
-                <div class="section-title">Add Family Member</div>
+                <div class="section-title">Add SwipeTree Member</div>
                 
                 <div class="label-form">
                     <div class="form-row">
                         <div class="form-group">
+                            <label for="member-id">ID Number</label>
+                            <input type="text" id="member-id" placeholder="140000">
+                        </div>
+                        <div class="form-group">
                             <label for="member-name">First Name</label>
                             <input type="text" id="member-name" placeholder="Enter first name">
                         </div>
-                        <div class="form-group">
-                            <label for="member-location">Location</label>
-                            <input type="text" id="member-location" placeholder="City, State">
-                        </div>
                     </div>
-                    <button class="btn btn-add" onclick="addLabel()">Add Family Member</button>
+                    <div class="form-group">
+                        <label for="member-location">Location</label>
+                        <input type="text" id="member-location" placeholder="City, State">
+                    </div>
+                    <button class="btn btn-add" onclick="addMember()">Add to SwipeTree</button>
                 </div>
                 
                 <div id="add-status"></div>
                 
                 <!-- Current Labels -->
-                <div class="section-title">Current Family Members</div>
-                <div id="labels-list" class="labels-list">
+                <div class="section-title">SwipeTree Members</div>
+                <div id="members-list" class="labels-list">
                     <div class="empty-state">
-                        <div>No family members added yet</div>
+                        <div>No SwipeTree members yet</div>
                         <small>Add your first family member above</small>
                     </div>
                 </div>
@@ -316,29 +326,26 @@
     </div>
     
     <script>
-        let githubToken = '';
-        let repoPath = '';
-        let familyLabels = [];
+        let accessToken = '';
+        const repoPath = 'allofushere/swipe-tree-labels';
+        let familyMembers = [];
         
-        async function connectGitHub() {
-            const token = document.getElementById('github-token').value.trim();
-            const repo = document.getElementById('repo-path').value.trim();
+        async function connectToSwipeTree() {
+            const token = document.getElementById('access-token').value.trim();
             
-            if (!token || !repo) {
-                showStatus('github-status', 'Please enter both token and repository path', 'error');
+            if (!token) {
+                showStatus('connection-status', 'Please enter your access token', 'error');
                 return;
             }
             
-            githubToken = token;
-            repoPath = repo;
-            
-            showStatus('github-status', 'Connecting to GitHub...', 'success');
+            accessToken = token;
+            showStatus('connection-status', 'Connecting to SwipeTree...', 'success');
             
             try {
-                // Test connection and load existing labels
+                // Test connection and load existing data
                 const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
                     headers: {
-                        'Authorization': `token ${githubToken}`,
+                        'Authorization': `token ${accessToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -346,99 +353,102 @@
                 if (response.ok) {
                     const data = await response.json();
                     const content = JSON.parse(atob(data.content));
-                    familyLabels = content.labels || [];
-                    showStatus('github-status', '✅ Connected! Loaded existing labels', 'success');
+                    familyMembers = content.labels || [];
+                    showStatus('connection-status', '✅ Connected! Loaded existing data', 'success');
                 } else if (response.status === 404) {
-                    // File doesn't exist yet - that's okay
-                    familyLabels = [];
-                    showStatus('github-status', '✅ Connected! Ready to create labels file', 'success');
+                    // Data file doesn't exist yet - that's okay
+                    familyMembers = [];
+                    showStatus('connection-status', '✅ Connected! Ready to add data', 'success');
                 } else {
-                    throw new Error('Failed to connect to GitHub');
+                    throw new Error('Connection failed');
                 }
                 
                 // Show the labels section
                 document.getElementById('labels-section').classList.remove('hidden');
-                updateLabelsDisplay();
+                updateMembersDisplay();
                 
             } catch (error) {
-                showStatus('github-status', '❌ Connection failed. Check your token and repo path.', 'error');
-                console.error('GitHub connection error:', error);
+                showStatus('connection-status', '❌ Connection failed. Check your token.', 'error');
+                console.error('Connection error:', error);
             }
         }
         
-        async function addLabel() {
+        async function addMember() {
+            const id = document.getElementById('member-id').value.trim();
             const name = document.getElementById('member-name').value.trim();
             const location = document.getElementById('member-location').value.trim();
             
-            if (!name || !location) {
-                showStatus('add-status', 'Please enter both name and location', 'error');
+            if (!id || !name || !location) {
+                showStatus('add-status', 'Please enter ID number, name, and location', 'error');
                 return;
             }
             
-            // Check for duplicates
-            if (familyLabels.some(label => label.name.toLowerCase() === name.toLowerCase())) {
-                showStatus('add-status', 'Family member already exists', 'error');
+            // Check for duplicates by ID
+            if (familyMembers.some(member => member.id === id)) {
+                showStatus('add-status', 'ID already exists', 'error');
                 return;
             }
             
-            showStatus('add-status', 'Adding family member...', 'success');
+            showStatus('add-status', 'Adding to SwipeTree...', 'success');
             
             // Add to local array
-            familyLabels.push({
+            familyMembers.push({
+                id: id,
                 name: name,
                 location: location
             });
             
             try {
-                // Save to GitHub
-                await saveToGitHub();
+                // Save data
+                await saveData();
                 
                 // Clear form
+                document.getElementById('member-id').value = '';
                 document.getElementById('member-name').value = '';
                 document.getElementById('member-location').value = '';
                 
                 // Update display
-                updateLabelsDisplay();
-                showStatus('add-status', `✅ ${name} added successfully!`, 'success');
+                updateMembersDisplay();
+                showStatus('add-status', `✅ ${name} (${id}) added successfully!`, 'success');
                 
             } catch (error) {
-                // Remove from local array if GitHub save failed
-                familyLabels.pop();
-                showStatus('add-status', '❌ Failed to save to GitHub', 'error');
+                // Remove from local array if save failed
+                familyMembers.pop();
+                showStatus('add-status', '❌ Failed to save data', 'error');
                 console.error('Save error:', error);
             }
         }
         
-        async function deleteLabel(index) {
-            const labelName = familyLabels[index].name;
+        async function deleteMember(index) {
+            const member = familyMembers[index];
             
-            if (!confirm(`Delete ${labelName} from family tree?`)) return;
+            if (!confirm(`Remove ${member.name} from SwipeTree?`)) return;
             
             // Remove from array
-            familyLabels.splice(index, 1);
+            familyMembers.splice(index, 1);
             
             try {
-                await saveToGitHub();
-                updateLabelsDisplay();
-                showStatus('add-status', `✅ ${labelName} removed`, 'success');
+                await saveData();
+                updateMembersDisplay();
+                showStatus('add-status', `✅ ${member.name} removed`, 'success');
             } catch (error) {
                 showStatus('add-status', '❌ Failed to save changes', 'error');
                 console.error('Delete error:', error);
             }
         }
         
-        async function saveToGitHub() {
+        async function saveData() {
             const content = {
-                labels: familyLabels,
+                labels: familyMembers,
                 updated: new Date().toISOString()
             };
             
-            // Check if file exists to get SHA
+            // Check if file exists to get current version
             let sha = null;
             try {
                 const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
                     headers: {
-                        'Authorization': `token ${githubToken}`,
+                        'Authorization': `token ${accessToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -448,54 +458,54 @@
                     sha = data.sha;
                 }
             } catch (error) {
-                // File might not exist yet
+                // Data file might not exist yet
             }
             
-            // Create or update file
-            const saveData = {
-                message: `Update family labels - ${familyLabels.length} members`,
+            // Update data file
+            const updateData = {
+                message: `Update SwipeTree data - ${familyMembers.length} members`,
                 content: btoa(JSON.stringify(content, null, 2))
             };
             
             if (sha) {
-                saveData.sha = sha;
+                updateData.sha = sha;
             }
             
             const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `token ${githubToken}`,
+                    'Authorization': `token ${accessToken}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(saveData)
+                body: JSON.stringify(updateData)
             });
             
             if (!response.ok) {
-                throw new Error('Failed to save to GitHub');
+                throw new Error('Failed to save data');
             }
         }
         
-        function updateLabelsDisplay() {
-            const container = document.getElementById('labels-list');
+        function updateMembersDisplay() {
+            const container = document.getElementById('members-list');
             
-            if (familyLabels.length === 0) {
+            if (familyMembers.length === 0) {
                 container.innerHTML = `
                     <div class="empty-state">
-                        <div>No family members added yet</div>
+                        <div>No SwipeTree members yet</div>
                         <small>Add your first family member above</small>
                     </div>
                 `;
                 return;
             }
             
-            const html = familyLabels.map((label, index) => `
+            const html = familyMembers.map((member, index) => `
                 <div class="label-item">
                     <div class="label-info">
-                        <div class="label-name">${label.name}</div>
-                        <div class="label-location">${label.location}</div>
+                        <div class="label-name">${member.name} (${member.id})</div>
+                        <div class="label-location">${member.location}</div>
                     </div>
-                    <button class="btn-delete" onclick="deleteLabel(${index})">Remove</button>
+                    <button class="btn-delete" onclick="deleteMember(${index})">Remove</button>
                 </div>
             `).join('');
             
