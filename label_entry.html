@@ -507,11 +507,9 @@
             // Pre-fill form if label exists
             if (labels[personId]) {
                 const label = labels[personId];
-                document.getElementById('firstName').value = label.firstName || '';
-                document.getElementById('lastName').value = label.lastName || '';
+                document.getElementById('fullName').value = label.name || '';
                 document.getElementById('birthDate').value = label.birthDate || '';
                 document.getElementById('location').value = label.location || '';
-                document.getElementById('relationship').value = label.relationship || '';
                 document.getElementById('notes').value = label.notes || '';
             } else {
                 clearForm();
