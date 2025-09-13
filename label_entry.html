@@ -49,6 +49,13 @@
             padding: 30px 20px;
         }
         
+        .auth-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        
         .section-title {
             font-size: 16px;
             font-weight: 600;
@@ -58,8 +65,8 @@
             align-items: center;
         }
         
-        .section-title::before {
-            content: "👥";
+        .auth-section .section-title::before {
+            content: "🌳";
             margin-right: 8px;
         }
         
@@ -75,7 +82,7 @@
             margin-bottom: 8px;
         }
         
-        input[type="text"] {
+        input[type="text"], input[type="password"] {
             width: 100%;
             padding: 15px;
             border: 2px solid #e0e0e0;
@@ -84,9 +91,21 @@
             transition: border-color 0.3s;
         }
         
-        input[type="text"]:focus {
+        input[type="text"]:focus, input[type="password"]:focus {
             outline: none;
             border-color: #4CAF50;
+        }
+        
+        .btn-connect {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
         }
         
         .btn-load {
@@ -100,10 +119,6 @@
             cursor: pointer;
             width: 100%;
             margin-top: 10px;
-        }
-        
-        .btn-load:hover {
-            background: linear-gradient(135deg, #1976D2, #1565C0);
         }
         
         .image-container {
@@ -171,65 +186,124 @@
             padding: 20px;
             margin-bottom: 20px;
         }
+        
+        .labels-section .section-title::before {
+            content: "👥";
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>SwipeTree Family Labels</h1>
+            <h1>🌳 SwipeTree Family Labels</h1>
             <p>Manage your SwipeTree family data</p>
         </div>
         
         <div class="main-content">
-            <div class="section-title">Add SwipeTree Member</div>
-            
-            <div class="label-form">
+            <!-- TOKEN AUTHENTICATION SECTION -->
+            <div class="auth-section">
+                <div class="section-title">Connect to SwipeTree</div>
                 <div class="form-group">
-                    <label for="member-id">ID Number</label>
-                    <input type="text" id="member-id" placeholder="142000">
-                    <button class="btn-load" onclick="loadPersonImage()">Load Image</button>
+                    <label for="access-token">Access Token</label>
+                    <input type="password" id="access-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
                 </div>
-                
-                <div class="image-container" id="imageContainer">
-                    <div class="loading-text">Enter ID and click "Load Image" to identify person</div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="member-name">First Name</label>
-                    <input type="text" id="member-name" placeholder="Enter first name">
-                </div>
-                
-                <div class="form-group">
-                    <label for="member-location">Location</label>
-                    <input type="text" id="member-location" placeholder="City, State">
-                </div>
-                
-                <button class="btn-add" onclick="addMember()">Add to SwipeTree</button>
+                <button class="btn-connect" onclick="connectToSwipeTree()">Connect to SwipeTree</button>
+                <div id="connection-status"></div>
             </div>
             
-            <div id="add-status"></div>
+            <!-- MEMBER ENTRY SECTION -->
+            <div class="labels-section">
+                <div class="section-title">Add SwipeTree Member</div>
+                
+                <div class="label-form">
+                    <div class="form-group">
+                        <label for="member-id">ID Number</label>
+                        <input type="text" id="member-id" placeholder="142000">
+                        <button class="btn-load" onclick="loadPersonImage()">Load Image</button>
+                    </div>
+                    
+                    <div class="image-container" id="imageContainer">
+                        <div class="loading-text">Enter ID and click "Load Image" to identify person</div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="member-name">First Name</label>
+                        <input type="text" id="member-name" placeholder="Enter first name">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="member-location">Location</label>
+                        <input type="text" id="member-location" placeholder="City, State">
+                    </div>
+                    
+                    <button class="btn-add" onclick="addMember()">Add to SwipeTree</button>
+                </div>
+                
+                <div id="add-status"></div>
+            </div>
         </div>
     </div>
     
     <script>
+        let accessToken = '';
+        const repoPath = 'allofushere/swipe-tree-labels';
+        let familyMembers = [];
+        
+        async function connectToSwipeTree() {
+            const token = document.getElementById('access-token').value.trim();
+            
+            if (!token) {
+                showStatus('connection-status', 'Please enter your access token', 'error');
+                return;
+            }
+            
+            accessToken = token;
+            showStatus('connection-status', 'Connecting to SwipeTree...', 'success');
+            
+            try {
+                const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
+                    headers: {
+                        'Authorization': `token ${accessToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const content = JSON.parse(atob(data.content));
+                    familyMembers = content.labels || [];
+                    showStatus('connection-status', '✅ Connected! Loaded existing data', 'success');
+                } else if (response.status === 404) {
+                    familyMembers = [];
+                    showStatus('connection-status', '✅ Connected! Ready to add data', 'success');
+                } else {
+                    throw new Error('Connection failed');
+                }
+                
+            } catch (error) {
+                showStatus('connection-status', '❌ Connection failed. Check your token.', 'error');
+                console.error('Connection error:', error);
+            }
+        }
+
         function loadPersonImage() {
             const idNumber = document.getElementById('member-id').value.trim();
             
             if (!idNumber) {
-                showStatus('Please enter an ID number first', 'error');
+                showStatus('add-status', 'Please enter an ID number first', 'error');
                 return;
             }
 
             const imageContainer = document.getElementById('imageContainer');
             imageContainer.innerHTML = '<div class="loading-text">Loading image...</div>';
 
-            // Try multiple image formats
             const imageFormats = ['.jpg', '.JPG'];
             
             function tryLoadImage(formatIndex = 0) {
                 if (formatIndex >= imageFormats.length) {
-                    imageContainer.innerHTML = '<div class="loading-text">Image not found for ID: ' + idNumber + '</div>';
-                    showStatus('Image not found. Please check the ID number.', 'error');
+                    imageContainer.innerHTML = '<div class="loading-text">❌ Image not found for ID: ' + idNumber + '</div>';
+                    showStatus('add-status', 'Image not found. Please check the ID number.', 'error');
                     return;
                 }
 
@@ -238,7 +312,7 @@
                 
                 img.onload = function() {
                     imageContainer.innerHTML = `<img src="${imageUrl}" alt="Person ${idNumber}" class="person-image">`;
-                    showStatus('Image loaded! Now identify and label this person.', 'success');
+                    showStatus('add-status', '✅ Image loaded! Now identify and label this person.', 'success');
                 };
                 
                 img.onerror = function() {
@@ -251,42 +325,123 @@
             tryLoadImage();
         }
         
-        function addMember() {
+        async function addMember() {
             const id = document.getElementById('member-id').value.trim();
             const name = document.getElementById('member-name').value.trim();
             const location = document.getElementById('member-location').value.trim();
             
             if (!id || !name || !location) {
-                showStatus('Please enter ID number, name, and location', 'error');
+                showStatus('add-status', 'Please enter ID number, name, and location', 'error');
                 return;
             }
             
-            // Check if image was loaded
             const imageContainer = document.getElementById('imageContainer');
             const hasLoadedImage = imageContainer.querySelector('.person-image');
             
             if (!hasLoadedImage) {
-                showStatus('Please load the image first to verify the person', 'error');
+                showStatus('add-status', '❌ Please load the image first to verify the person', 'error');
                 return;
             }
             
-            showStatus(`${name} (${id}) added successfully!`, 'success');
+            if (familyMembers.some(member => member.id === id)) {
+                showStatus('add-status', 'ID already exists', 'error');
+                return;
+            }
             
-            // Clear form
-            document.getElementById('member-id').value = '';
-            document.getElementById('member-name').value = '';
-            document.getElementById('member-location').value = '';
-            document.getElementById('imageContainer').innerHTML = '<div class="loading-text">Enter ID and click "Load Image" to identify person</div>';
+            showStatus('add-status', 'Adding to SwipeTree...', 'success');
+            
+            familyMembers.push({
+                id: id,
+                name: name,
+                location: location
+            });
+            
+            try {
+                if (accessToken) {
+                    await saveData();
+                }
+                
+                showStatus('add-status', `✅ ${name} (${id}) added successfully!`, 'success');
+                
+                document.getElementById('member-id').value = '';
+                document.getElementById('member-name').value = '';
+                document.getElementById('member-location').value = '';
+                document.getElementById('imageContainer').innerHTML = '<div class="loading-text">Enter ID and click "Load Image" to identify person</div>';
+                
+            } catch (error) {
+                familyMembers.pop();
+                showStatus('add-status', '❌ Failed to save data', 'error');
+                console.error('Save error:', error);
+            }
         }
         
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('add-status');
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
+        async function saveData() {
+            const content = {
+                labels: familyMembers,
+                updated: new Date().toISOString()
+            };
             
-            setTimeout(() => {
-                statusDiv.innerHTML = '';
-            }, 3000);
+            let sha = null;
+            try {
+                const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
+                    headers: {
+                        'Authorization': `token ${accessToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    sha = data.sha;
+                }
+            } catch (error) {
+                // File might not exist yet
+            }
+            
+            const updateData = {
+                message: `Update SwipeTree data - ${familyMembers.length} members`,
+                content: btoa(JSON.stringify(content, null, 2))
+            };
+            
+            if (sha) {
+                updateData.sha = sha;
+            }
+            
+            const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${accessToken}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(updateData)
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save data');
+            }
+        }
+        
+        function showStatus(elementId, message, type) {
+            let element = document.getElementById(elementId);
+            
+            if (!element) {
+                element = document.createElement('div');
+                element.id = elementId;
+                const container = elementId === 'connection-status' ? 
+                    document.querySelector('.auth-section') : 
+                    document.querySelector('.labels-section');
+                container.appendChild(element);
+            }
+            
+            element.textContent = message;
+            element.className = `status ${type}`;
+            
+            if (type === 'success') {
+                setTimeout(() => {
+                    element.innerHTML = '';
+                }, 3000);
+            }
         }
     </script>
 </body>
