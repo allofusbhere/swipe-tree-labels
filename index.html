@@ -278,7 +278,12 @@ img{-webkit-touch-callout:none}
     // Load and display family data
     const personData = await getPersonData(idStr);
     anchorName.textContent = personData.name || '';
-    anchorDetails.innerHTML = formatDetails(personData);
+    
+    // Format details (birth date and location only)
+    const details = [];
+    if (personData.birthDate) details.push(`<span class="date">${personData.birthDate}</span>`);
+    if (personData.location) details.push(`<span class="location">${personData.location}</span>`);
+    anchorDetails.innerHTML = details.join(' | ');
     
     requestAnimationFrame(()=>{ anchorImg.classList.add('highlight'); setTimeout(()=>anchorImg.classList.remove('highlight'),350); });
   }
@@ -343,24 +348,20 @@ img{-webkit-touch-callout:none}
     if(p){ 
       const ok=await exists(idToSrc(p)); 
       const personData = await getPersonData(p);
-      const details = personData.birthDate || personData.location ? 
-        [personData.birthDate, personData.location].filter(Boolean).join(' | ') : '';
       cards.push({
         id: p, 
         src: ok ? idToSrc(p) : PLACEHOLDER, 
         name: personData.name,
-        details: details
+        details: personData.location || ''
       });
       
       const sp=p+'.1'; const ok2=await exists(idToSrc(sp)); 
       const spouseData = await getPersonData(sp);
-      const spouseDetails = spouseData.birthDate || spouseData.location ? 
-        [spouseData.birthDate, spouseData.location].filter(Boolean).join(' | ') : '';
       cards.push(ok2 ? {
         id: sp, 
         src: idToSrc(sp), 
         name: spouseData.name,
-        details: spouseDetails
+        details: spouseData.location || ''
       } : {
         id: 'Parent2', 
         src: PLACEHOLDER, 
