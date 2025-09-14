@@ -3,462 +3,672 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SwipeTree Label Manager</title>
+    <title>GitHub Mobile Label Entry</title>
     <style>
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
-        
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
         }
-        
+
         .container {
-            max-width: 500px;
+            max-width: 400px;
             margin: 0 auto;
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
             overflow: hidden;
         }
-        
+
         .header {
             background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
-            padding: 30px 20px;
+            padding: 20px;
             text-align: center;
         }
-        
+
         .header h1 {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 8px;
+            font-size: 1.5em;
+            margin-bottom: 5px;
         }
-        
+
         .header p {
             opacity: 0.9;
-            font-size: 14px;
+            font-size: 0.9em;
         }
-        
-        .main-content {
-            padding: 30px 20px;
+
+        .status {
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
         }
-        
-        .auth-section {
-            background: #f8f9fa;
-            border-radius: 15px;
+
+        .status.connected {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status.disconnected {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .github-auth {
             padding: 20px;
-            margin-bottom: 25px;
+            border-bottom: 1px solid #eee;
         }
-        
-        .section-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: #333;
+
+        .github-auth.hidden {
+            display: none;
+        }
+
+        .github-help {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
             margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+
+        .github-help h4 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .github-help ol {
+            margin-left: 20px;
+            color: #6c757d;
+        }
+
+        .github-help ol li {
+            margin-bottom: 5px;
+        }
+
+        .github-help strong {
+            color: #28a745;
+            display: block;
+            margin-top: 10px;
+        }
+
+        .main-app {
+            padding: 20px;
+        }
+
+        .main-app.hidden {
+            display: none;
+        }
+
+        .stats {
             display: flex;
-            align-items: center;
+            justify-content: space-between;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
         }
-        
-        .auth-section .section-title::before {
-            content: "🌳";
-            margin-right: 8px;
+
+        .stats strong {
+            color: #4CAF50;
         }
-        
+
         .form-group {
             margin-bottom: 20px;
         }
-        
-        label {
+
+        .form-group label {
             display: block;
-            font-size: 14px;
-            font-weight: 500;
-            color: #555;
             margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
         }
-        
-        input[type="text"], input[type="password"] {
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
             width: 100%;
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 12px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
             font-size: 16px;
             transition: border-color 0.3s;
         }
-        
-        input[type="text"]:focus, input[type="password"]:focus {
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
             outline: none;
             border-color: #4CAF50;
         }
-        
-        .btn-connect {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            border: none;
-            padding: 15px 25px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
+
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
         }
-        
-        .btn-load {
-            background: linear-gradient(135deg, #2196F3, #1976D2);
-            color: white;
-            border: none;
-            padding: 12px 20px;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
+
+        .id-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
         }
-        
-        .image-container {
+
+        .id-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .id-input-group input {
+            flex: 1;
+        }
+
+        .person-info {
             text-align: center;
-            margin: 20px 0;
-            min-height: 200px;
-            border: 2px dashed #ddd;
-            border-radius: 15px;
+            margin-top: 15px;
+        }
+
+        .person-info h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .person-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #4CAF50;
+            margin: 10px auto;
+            display: block;
+        }
+
+        .image-placeholder {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            background: #f0f0f0;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: #f9f9f9;
-            padding: 20px;
-        }
-        
-        .loading-text {
+            margin: 10px auto;
+            border: 2px dashed #ccc;
             color: #666;
-            font-style: italic;
+            font-size: 0.9em;
             text-align: center;
         }
-        
-        .person-image {
-            max-width: 100%;
-            max-height: 300px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        
-        .btn-add {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
+
+        .btn {
+            padding: 12px 24px;
             border: none;
-            padding: 15px 25px;
-            border-radius: 10px;
+            border-radius: 8px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s;
             width: 100%;
-            margin-top: 20px;
+            margin-bottom: 10px;
         }
-        
-        .status {
-            margin: 15px 0;
-            padding: 10px;
+
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
+
+        .btn-load {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-load:hover {
+            background: #138496;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
             border-radius: 8px;
+            margin: 15px 0;
             text-align: center;
-            font-size: 14px;
+            display: none;
         }
-        
-        .status.success {
-            background: #e8f5e8;
-            color: #2e7d2e;
-            border: 1px solid #c8e6c8;
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+            display: none;
         }
-        
-        .status.error {
-            background: #ffeaea;
-            color: #d32f2f;
-            border: 1px solid #ffcdd2;
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            color: #666;
         }
-        
-        .label-form {
-            background: #f0f7ff;
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            animation: loading-dots 1.5s infinite;
         }
-        
-        .labels-section .section-title::before {
-            content: "👥";
-            margin-right: 8px;
+
+        @keyframes loading-dots {
+            0%, 20% { content: ''; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80%, 100% { content: ''; }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌳 SwipeTree Family Labels</h1>
-            <p>Manage your SwipeTree family data</p>
+            <h1>📱 Enhanced Label Entry</h1>
+            <p>Auto-sync with GitHub repository</p>
         </div>
-        
-        <div class="main-content">
-            <!-- TOKEN AUTHENTICATION SECTION -->
-            <div class="auth-section">
-                <div class="section-title">Connect to SwipeTree</div>
-                <div class="form-group">
-                    <label for="access-token">Access Token</label>
-                    <input type="password" id="access-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
-                </div>
-                <button class="btn-connect" onclick="connectToSwipeTree()">Connect to SwipeTree</button>
-                <div id="connection-status"></div>
-            </div>
+
+        <div class="status disconnected" id="connectionStatus">
+            Not connected to GitHub
+        </div>
+
+        <div class="github-auth" id="githubAuth">
+            <h3>🔑 GitHub Authentication</h3>
             
-            <!-- MEMBER ENTRY SECTION -->
-            <div class="labels-section">
-                <div class="section-title">Add SwipeTree Member</div>
-                
-                <div class="label-form">
-                    <div class="form-group">
-                        <label for="member-id">ID Number</label>
-                        <input type="text" id="member-id" placeholder="142000">
-                        <button class="btn-load" onclick="loadPersonImage()">Load Image</button>
-                    </div>
-                    
-                    <div class="image-container" id="imageContainer">
-                        <div class="loading-text">Enter ID and click "Load Image" to identify person</div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="member-name">First Name</label>
-                        <input type="text" id="member-name" placeholder="Enter first name">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="member-location">Location</label>
-                        <input type="text" id="member-location" placeholder="City, State">
-                    </div>
-                    
-                    <button class="btn-add" onclick="addMember()">Add to SwipeTree</button>
+            <div class="github-help">
+                <h4>Need a GitHub Token?</h4>
+                <ol>
+                    <li>Go to GitHub → Settings → Developer settings</li>
+                    <li>Personal access tokens → Generate new token</li>
+                    <li>Check "repo" scope (full repository access)</li>
+                    <li>Copy the token and paste below</li>
+                </ol>
+                <strong>Token is only stored for this session (secure)</strong>
+            </div>
+
+            <div class="form-group">
+                <label for="githubToken">GitHub Personal Access Token</label>
+                <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+            </div>
+
+            <button class="btn btn-primary" id="connectBtn">Connect to GitHub</button>
+            <div class="loading" id="loadingAuth">Connecting to GitHub</div>
+        </div>
+
+        <div class="main-app hidden" id="mainApp">
+            <div class="stats" id="statsSection">
+                <div>Labels This Session: <strong id="sessionCount">0</strong></div>
+                <div>Total Labels in Repo: <strong id="totalCount">0</strong></div>
+            </div>
+
+            <div class="success-message" id="successMessage">
+                ✅ Label saved to GitHub successfully!
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                ❌ Error saving to GitHub. Please try again.
+            </div>
+
+            <div class="id-section">
+                <h3>Enter Person ID#</h3>
+                <div class="id-input-group">
+                    <input type="text" id="personId" placeholder="e.g., 140000" maxlength="10">
+                    <button class="btn btn-load" id="loadBtn">Load</button>
                 </div>
                 
-                <div id="add-status"></div>
+                <div class="person-info" id="personInfo" style="display: none;">
+                    <h3 id="personTitle">Person ID: </h3>
+                    <div id="imageContainer">
+                        <div class="image-placeholder">
+                            Image not found<br>
+                            <small>Will still save label data</small>
+                        </div>
+                    </div>
+                </div>
             </div>
+
+            <form id="labelForm">
+                <div class="form-group">
+                    <label for="firstName">First Name</label>
+                    <input type="text" id="firstName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="lastName">Last Name</label>
+                    <input type="text" id="lastName" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="birthDate">Birth Date</label>
+                    <input type="date" id="birthDate">
+                </div>
+
+                <div class="form-group">
+                    <label for="location">Location</label>
+                    <input type="text" id="location" placeholder="City, State or Region">
+                </div>
+
+                <div class="form-group">
+                    <label for="relationship">Relationship</label>
+                    <select id="relationship">
+                        <option value="">Select relationship</option>
+                        <option value="parent">Parent</option>
+                        <option value="child">Child</option>
+                        <option value="spouse">Spouse</option>
+                        <option value="sibling">Sibling</option>
+                        <option value="grandparent">Grandparent</option>
+                        <option value="grandchild">Grandchild</option>
+                        <option value="aunt-uncle">Aunt/Uncle</option>
+                        <option value="cousin">Cousin</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" placeholder="Additional information about this person"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="saveBtn">Save to GitHub</button>
+                <button type="button" class="btn btn-secondary" id="clearBtn">Clear Form</button>
+            </form>
         </div>
     </div>
-    
+
     <script>
-        let accessToken = '';
-        const repoPath = 'allofushere/swipe-tree-labels';
-        let familyMembers = [];
+        let githubToken = '';
+        let labels = {};
+        let sessionCount = 0;
+        const username = 'allofusbhere';
+        const repo = 'swipe-tree-labels';
+        const labelsFile = 'family_labels.json';
         
-        async function connectToSwipeTree() {
-            const token = document.getElementById('access-token').value.trim();
-            
+        // Elements
+        const connectBtn = document.getElementById('connectBtn');
+        const tokenInput = document.getElementById('githubToken');
+        const githubAuth = document.getElementById('githubAuth');
+        const mainApp = document.getElementById('mainApp');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const loadingAuth = document.getElementById('loadingAuth');
+        const personIdInput = document.getElementById('personId');
+        const loadBtn = document.getElementById('loadBtn');
+        const personInfo = document.getElementById('personInfo');
+        const personTitle = document.getElementById('personTitle');
+        const imageContainer = document.getElementById('imageContainer');
+        const labelForm = document.getElementById('labelForm');
+        const clearBtn = document.getElementById('clearBtn');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const sessionCountElement = document.getElementById('sessionCount');
+        const totalCountElement = document.getElementById('totalCount');
+
+        // GitHub connection
+        connectBtn.addEventListener('click', async () => {
+            const token = tokenInput.value.trim();
             if (!token) {
-                showStatus('connection-status', 'Please enter your access token', 'error');
+                alert('Please enter a GitHub token');
                 return;
             }
-            
-            accessToken = token;
-            showStatus('connection-status', 'Connecting to SwipeTree...', 'success');
-            
+
+            githubToken = token;
+            loadingAuth.style.display = 'block';
+            connectBtn.disabled = true;
+
             try {
-                const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
+                // Test token by accessing the repository
+                const response = await fetch(`https://api.github.com/repos/${username}/${repo}`, {
                     headers: {
-                        'Authorization': `token ${accessToken}`,
+                        'Authorization': `token ${githubToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
-                
+
                 if (response.ok) {
-                    const data = await response.json();
-                    const content = JSON.parse(atob(data.content));
-                    familyMembers = content.labels || [];
-                    showStatus('connection-status', '✅ Connected! Loaded existing data', 'success');
-                } else if (response.status === 404) {
-                    familyMembers = [];
-                    showStatus('connection-status', '✅ Connected! Ready to add data', 'success');
+                    connectionStatus.textContent = 'Connected to GitHub successfully';
+                    connectionStatus.className = 'status connected';
+                    githubAuth.classList.add('hidden');
+                    mainApp.classList.remove('hidden');
+                    
+                    // Load existing labels
+                    await loadExistingLabels();
                 } else {
-                    throw new Error('Connection failed');
+                    throw new Error(`GitHub connection failed: ${response.status}`);
                 }
-                
             } catch (error) {
-                showStatus('connection-status', '❌ Connection failed. Check your token.', 'error');
-                console.error('Connection error:', error);
+                alert(`Connection failed: ${error.message}`);
+                connectionStatus.textContent = 'GitHub connection failed';
+                connectionStatus.className = 'status disconnected';
+            } finally {
+                loadingAuth.style.display = 'none';
+                connectBtn.disabled = false;
+            }
+        });
+
+        // Load person data
+        loadBtn.addEventListener('click', () => {
+            const personId = personIdInput.value.trim();
+            if (!personId) {
+                alert('Please enter a person ID');
+                return;
+            }
+
+            loadPersonData(personId);
+        });
+
+        function loadPersonData(personId) {
+            personTitle.textContent = `Person ID: ${personId}`;
+            
+            // Try to load image
+            const imageBaseUrl = 'https://raw.githubusercontent.com/allofusbhere/family-tree-images/main/';
+            const imageUrl = `${imageBaseUrl}${personId}.jpg`;
+            
+            const img = new Image();
+            img.onload = () => {
+                imageContainer.innerHTML = `<img src="${imageUrl}" alt="Person ${personId}" class="person-image">`;
+            };
+            img.onerror = () => {
+                imageContainer.innerHTML = `
+                    <div class="image-placeholder">
+                        Image not found<br>
+                        <small>Will still save label data</small>
+                    </div>
+                `;
+            };
+            img.src = imageUrl;
+
+            personInfo.style.display = 'block';
+            
+            // Pre-fill form if label exists
+            if (labels[personId]) {
+                const label = labels[personId];
+                document.getElementById('fullName').value = label.name || '';
+                document.getElementById('birthDate').value = label.birthDate || '';
+                document.getElementById('location').value = label.location || '';
+                document.getElementById('notes').value = label.notes || '';
+            } else {
+                clearForm();
             }
         }
 
-        function loadPersonImage() {
-            const idNumber = document.getElementById('member-id').value.trim();
+        // Form submission
+        labelForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
             
-            if (!idNumber) {
-                showStatus('add-status', 'Please enter an ID number first', 'error');
+            const personId = personIdInput.value.trim();
+            if (!personId) {
+                alert('Please load a person first');
                 return;
             }
 
-            const imageContainer = document.getElementById('imageContainer');
-            imageContainer.innerHTML = '<div class="loading-text">Loading image...</div>';
+            const labelData = {
+                personId: personId,
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                birthDate: document.getElementById('birthDate').value,
+                location: document.getElementById('location').value,
+                relationship: document.getElementById('relationship').value,
+                notes: document.getElementById('notes').value,
+                lastUpdated: new Date().toISOString()
+            };
 
-            // Try the exact formats I can see in your repo
-            const imageFormats = ['.jpg', '.1.jpg'];
-            let currentFormat = 0;
+            // Add to labels object
+            const isNewLabel = !labels[personId];
+            labels[personId] = labelData;
             
-            function tryLoadImage() {
-                if (currentFormat >= imageFormats.length) {
-                    imageContainer.innerHTML = '<div class="loading-text">❌ Image not found for ID: ' + idNumber + '<br>Tried: ' + idNumber + '.jpg and ' + idNumber + '.1.jpg</div>';
-                    showStatus('add-status', 'Image not found. Please check the ID number.', 'error');
-                    return;
-                }
-
-                const fileName = `${idNumber}${imageFormats[currentFormat]}`;
-                // Use GitHub Pages URL format (same as main SwipeTree app)
-                const imageUrl = `https://allofusbhere.github.io/family-tree-images/${fileName}`;
-                
-                console.log('Trying to load:', imageUrl); // Debug log
-                
-                const img = new Image();
-                
-                img.onload = function() {
-                    console.log('Image loaded successfully:', imageUrl); // Debug log
-                    imageContainer.innerHTML = `<img src="${imageUrl}" alt="Person ${idNumber}" class="person-image">`;
-                    showStatus('add-status', '✅ Image loaded! Now identify and label this person.', 'success');
-                };
-                
-                img.onerror = function() {
-                    console.log('Failed to load:', imageUrl); // Debug log
-                    currentFormat++;
-                    tryLoadImage();
-                };
-                
-                img.src = imageUrl;
+            if (isNewLabel) {
+                sessionCount++;
             }
 
-            tryLoadImage();
-        }
-        
-        async function addMember() {
-            const id = document.getElementById('member-id').value.trim();
-            const name = document.getElementById('member-name').value.trim();
-            const location = document.getElementById('member-location').value.trim();
-            
-            if (!id || !name || !location) {
-                showStatus('add-status', 'Please enter ID number, name, and location', 'error');
-                return;
-            }
-            
-            const imageContainer = document.getElementById('imageContainer');
-            const hasLoadedImage = imageContainer.querySelector('.person-image');
-            
-            if (!hasLoadedImage) {
-                showStatus('add-status', '❌ Please load the image first to verify the person', 'error');
-                return;
-            }
-            
-            if (familyMembers.some(member => member.id === id)) {
-                showStatus('add-status', 'ID already exists', 'error');
-                return;
-            }
-            
-            showStatus('add-status', 'Adding to SwipeTree...', 'success');
-            
-            familyMembers.push({
-                id: id,
-                name: name,
-                location: location
-            });
-            
             try {
-                if (accessToken) {
-                    await saveData();
-                }
+                await saveLabelsToGitHub();
+                showSuccess();
+                updateCounts();
                 
-                showStatus('add-status', `✅ ${name} (${id}) added successfully!`, 'success');
-                
-                document.getElementById('member-id').value = '';
-                document.getElementById('member-name').value = '';
-                document.getElementById('member-location').value = '';
-                document.getElementById('imageContainer').innerHTML = '<div class="loading-text">Enter ID and click "Load Image" to identify person</div>';
+                // Clear form for next entry
+                setTimeout(() => {
+                    clearForm();
+                    personIdInput.value = '';
+                    personInfo.style.display = 'none';
+                }, 1000);
                 
             } catch (error) {
-                familyMembers.pop();
-                showStatus('add-status', '❌ Failed to save data', 'error');
+                showError();
                 console.error('Save error:', error);
             }
+        });
+
+        // Clear form
+        clearBtn.addEventListener('click', clearForm);
+
+        function clearForm() {
+            labelForm.reset();
         }
-        
-        async function saveData() {
-            const content = {
-                labels: familyMembers,
-                updated: new Date().toISOString()
-            };
+
+        // Load existing labels from GitHub
+        async function loadExistingLabels() {
+            try {
+                const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${labelsFile}`, {
+                    headers: {
+                        'Authorization': `token ${githubToken}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const content = atob(data.content);
+                    labels = JSON.parse(content);
+                    updateCounts();
+                } else if (response.status === 404) {
+                    // File doesn't exist yet, start with empty labels
+                    labels = {};
+                    updateCounts();
+                } else {
+                    throw new Error(`Failed to load labels: ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Error loading labels:', error);
+                labels = {};
+                updateCounts();
+            }
+        }
+
+        // Save labels to GitHub
+        async function saveLabelsToGitHub() {
+            const content = btoa(JSON.stringify(labels, null, 2));
             
+            // First, try to get the current file to get its SHA
             let sha = null;
             try {
-                const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
+                const getResponse = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${labelsFile}`, {
                     headers: {
-                        'Authorization': `Bearer ${accessToken}`,
+                        'Authorization': `token ${githubToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
                 
-                if (response.ok) {
-                    const data = await response.json();
+                if (getResponse.ok) {
+                    const data = await getResponse.json();
                     sha = data.sha;
                 }
             } catch (error) {
-                console.log('File does not exist yet, will create new file');
+                // File might not exist yet, that's ok
             }
-            
-            const updateData = {
-                message: `Update family labels - ${familyMembers.length} members`,
-                content: btoa(JSON.stringify(content, null, 2)),
-                branch: 'main'
+
+            // Now save the file
+            const saveData = {
+                message: `Update family labels - ${new Date().toLocaleString()}`,
+                content: content
             };
             
             if (sha) {
-                updateData.sha = sha;
+                saveData.sha = sha;
             }
-            
-            const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
+
+            const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${labelsFile}`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `token ${githubToken}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(updateData)
+                body: JSON.stringify(saveData)
             });
-            
+
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error('GitHub API Error:', errorData);
-                throw new Error(`GitHub API Error: ${errorData.message || 'Failed to save'}`);
-            }
-            
-            const result = await response.json();
-            console.log('Save successful:', result);
-        }
-        
-        function showStatus(elementId, message, type) {
-            let element = document.getElementById(elementId);
-            
-            if (!element) {
-                element = document.createElement('div');
-                element.id = elementId;
-                const container = elementId === 'connection-status' ? 
-                    document.querySelector('.auth-section') : 
-                    document.querySelector('.labels-section');
-                container.appendChild(element);
-            }
-            
-            element.textContent = message;
-            element.className = `status ${type}`;
-            
-            if (type === 'success') {
-                setTimeout(() => {
-                    element.innerHTML = '';
-                }, 3000);
+                throw new Error(`Save failed: ${response.status}`);
             }
         }
+
+        function updateCounts() {
+            sessionCountElement.textContent = sessionCount;
+            totalCountElement.textContent = Object.keys(labels).length;
+        }
+
+        function showSuccess() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function showError() {
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        // Initialize
+        updateCounts();
     </script>
 </body>
 </html>
