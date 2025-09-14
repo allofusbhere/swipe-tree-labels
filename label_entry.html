@@ -298,27 +298,35 @@
             const imageContainer = document.getElementById('imageContainer');
             imageContainer.innerHTML = '<div class="loading-text">Loading image...</div>';
 
-            // Try multiple image formats based on your repo structure
-            const imageFormats = ['.jpg', '.1.jpg', '.JPG'];
+            // Try the exact formats I can see in your repo
+            const imageFormats = ['.jpg', '.1.jpg'];
+            let currentFormat = 0;
             
-            function tryLoadImage(formatIndex = 0) {
-                if (formatIndex >= imageFormats.length) {
-                    imageContainer.innerHTML = '<div class="loading-text">❌ Image not found for ID: ' + idNumber + '</div>';
+            function tryLoadImage() {
+                if (currentFormat >= imageFormats.length) {
+                    imageContainer.innerHTML = '<div class="loading-text">❌ Image not found for ID: ' + idNumber + '<br>Tried: ' + idNumber + '.jpg and ' + idNumber + '.1.jpg</div>';
                     showStatus('add-status', 'Image not found. Please check the ID number.', 'error');
                     return;
                 }
 
-                // CORRECTED: Points to your actual family-tree-images repository
-                const imageUrl = `https://raw.githubusercontent.com/allofushere/family-tree-images/main/${idNumber}${imageFormats[formatIndex]}`;
+                const fileName = `${idNumber}${imageFormats[currentFormat]}`;
+                // Use GitHub Pages URL format (same as main SwipeTree app)
+                const imageUrl = `https://allofusbhere.github.io/family-tree-images/${fileName}`;
+                
+                console.log('Trying to load:', imageUrl); // Debug log
+                
                 const img = new Image();
                 
                 img.onload = function() {
+                    console.log('Image loaded successfully:', imageUrl); // Debug log
                     imageContainer.innerHTML = `<img src="${imageUrl}" alt="Person ${idNumber}" class="person-image">`;
                     showStatus('add-status', '✅ Image loaded! Now identify and label this person.', 'success');
                 };
                 
                 img.onerror = function() {
-                    tryLoadImage(formatIndex + 1);
+                    console.log('Failed to load:', imageUrl); // Debug log
+                    currentFormat++;
+                    tryLoadImage();
                 };
                 
                 img.src = imageUrl;
