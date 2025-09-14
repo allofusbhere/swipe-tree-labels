@@ -100,7 +100,7 @@ img{-webkit-touch-callout:none}
   'use strict';
   
   const params = new URLSearchParams(location.search);
-  const DEFAULT_IMG_BASE = 'https://raw.githubusercontent.com/allofusbhere/family-tree-images/main/';
+  const DEFAULT_IMG_BASE = 'https://allofusbhere.github.io/family-tree-images/';
   const IMG_BASE = (params.get('imgbase') || DEFAULT_IMG_BASE).replace(/\/?$/, '/');
   const IMG_EXT = '.jpg';
   const PLACEHOLDER_NAME = 'placeholder.jpg';
@@ -171,13 +171,13 @@ img{-webkit-touch-callout:none}
     }
   }
 
-  // Get label data for a person
+  // Get label data for a person - FIXED to use correct field names
   async function getPersonData(id) {
     await loadFamilyLabels();
     const data = state.familyLabels[id];
     if (data) {
       return {
-        name: data.name || '',
+        name: data.firstName || '',  // Changed from data.name to data.firstName
         birthDate: data.birthDate || '',
         location: data.location || '',
         notes: data.notes || ''
@@ -266,7 +266,7 @@ img{-webkit-touch-callout:none}
     const out=[]; for(let k=1;k<=MAX_CANDIDATES;k++){ const s=toStr(floor+k*sibStep,d); if(s!==baseId) out.push(s); } return out;
   }
 
-  // Enhanced setAnchor with family labels
+  // Enhanced setAnchor with family labels - FIXED to display names and locations
   async function setAnchor(idStr, pushHistory=true){
     if(state.gridOpen) closeGrid();
     if(state.anchorId && pushHistory) state.historyStack.push(state.anchorId);
@@ -277,13 +277,22 @@ img{-webkit-touch-callout:none}
     
     // Load and display family data
     const personData = await getPersonData(idStr);
+    
+    // Display name prominently
     anchorName.textContent = personData.name || '';
     
-    // Format details (birth date and location only)
-    const details = [];
-    if (personData.birthDate) details.push(`<span class="date">${personData.birthDate}</span>`);
-    if (personData.location) details.push(`<span class="location">${personData.location}</span>`);
-    anchorDetails.innerHTML = details.join(' | ');
+    // Display location under name (if available)
+    let details = '';
+    if (personData.location) {
+      details = `<span class="location">${personData.location}</span>`;
+    }
+    if (personData.birthDate) {
+      if (details) details += ' | ';
+      details += `<span class="date">${personData.birthDate}</span>`;
+    }
+    anchorDetails.innerHTML = details;
+    
+    console.log(`Displaying person ${idStr}: "${personData.name}" from "${personData.location}"`);
     
     requestAnimationFrame(()=>{ anchorImg.classList.add('highlight'); setTimeout(()=>anchorImg.classList.remove('highlight'),350); });
   }
@@ -328,12 +337,11 @@ img{-webkit-touch-callout:none}
     for(let i=0;i<ids.length;i++) {
       if(checks[i]) {
         const personData = await getPersonData(ids[i]);
-        const details = personData.birthDate || personData.location ? 
-          [personData.birthDate, personData.location].filter(Boolean).join(' | ') : '';
+        const details = personData.location || ''; // Show location in grid
         out.push({
           id: ids[i], 
           src: idToSrc(ids[i]), 
-          name: personData.name,
+          name: personData.name,  // This will now work correctly
           details: details
         });
       }
