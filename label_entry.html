@@ -298,7 +298,8 @@
             const imageContainer = document.getElementById('imageContainer');
             imageContainer.innerHTML = '<div class="loading-text">Loading image...</div>';
 
-            const imageFormats = ['.jpg', '.JPG'];
+            // Try multiple image formats based on your repo structure
+            const imageFormats = ['.jpg', '.1.jpg', '.JPG'];
             
             function tryLoadImage(formatIndex = 0) {
                 if (formatIndex >= imageFormats.length) {
@@ -307,6 +308,7 @@
                     return;
                 }
 
+                // CORRECTED: Points to your actual family-tree-images repository
                 const imageUrl = `https://raw.githubusercontent.com/allofushere/family-tree-images/main/${idNumber}${imageFormats[formatIndex]}`;
                 const img = new Image();
                 
