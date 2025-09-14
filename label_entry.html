@@ -395,7 +395,7 @@
             try {
                 const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
                     headers: {
-                        'Authorization': `token ${accessToken}`,
+                        'Authorization': `Bearer ${accessToken}`,
                         'Accept': 'application/vnd.github.v3+json'
                     }
                 });
@@ -405,12 +405,13 @@
                     sha = data.sha;
                 }
             } catch (error) {
-                // File might not exist yet
+                console.log('File does not exist yet, will create new file');
             }
             
             const updateData = {
-                message: `Update SwipeTree data - ${familyMembers.length} members`,
-                content: btoa(JSON.stringify(content, null, 2))
+                message: `Update family labels - ${familyMembers.length} members`,
+                content: btoa(JSON.stringify(content, null, 2)),
+                branch: 'main'
             };
             
             if (sha) {
@@ -420,7 +421,7 @@
             const response = await fetch(`https://api.github.com/repos/${repoPath}/contents/family_labels.json`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `token ${accessToken}`,
+                    'Authorization': `Bearer ${accessToken}`,
                     'Accept': 'application/vnd.github.v3+json',
                     'Content-Type': 'application/json'
                 },
@@ -428,8 +429,13 @@
             });
             
             if (!response.ok) {
-                throw new Error('Failed to save data');
+                const errorData = await response.json();
+                console.error('GitHub API Error:', errorData);
+                throw new Error(`GitHub API Error: ${errorData.message || 'Failed to save'}`);
             }
+            
+            const result = await response.json();
+            console.log('Save successful:', result);
         }
         
         function showStatus(elementId, message, type) {
