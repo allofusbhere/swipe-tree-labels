@@ -15,28 +15,32 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 10px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .container {
-            max-width: 400px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: 420px;
             background: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
             overflow: hidden;
+            margin: 0 auto;
         }
 
         .header {
             background: linear-gradient(135deg, #4CAF50, #45a049);
             color: white;
-            padding: 20px;
+            padding: 25px 20px;
             text-align: center;
         }
 
         .header h1 {
-            font-size: 1.5em;
-            margin-bottom: 5px;
+            font-size: 1.4em;
+            margin-bottom: 8px;
         }
 
         .header p {
@@ -45,7 +49,7 @@
         }
 
         .status {
-            padding: 15px;
+            padding: 15px 20px;
             text-align: center;
             font-weight: bold;
             border-bottom: 1px solid #eee;
@@ -62,7 +66,7 @@
         }
 
         .github-auth {
-            padding: 20px;
+            padding: 25px 20px;
             border-bottom: 1px solid #eee;
         }
 
@@ -72,15 +76,15 @@
 
         .github-help {
             background: #f8f9fa;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
+            border-radius: 10px;
+            padding: 18px;
+            margin-bottom: 20px;
             font-size: 0.9em;
         }
 
         .github-help h4 {
             color: #495057;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
         }
 
         .github-help ol {
@@ -89,17 +93,17 @@
         }
 
         .github-help ol li {
-            margin-bottom: 5px;
+            margin-bottom: 6px;
         }
 
         .github-help strong {
             color: #28a745;
             display: block;
-            margin-top: 10px;
+            margin-top: 12px;
         }
 
         .main-app {
-            padding: 20px;
+            padding: 25px 20px;
         }
 
         .main-app.hidden {
@@ -110,9 +114,9 @@
             display: flex;
             justify-content: space-between;
             background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 18px;
+            border-radius: 10px;
+            margin-bottom: 25px;
             font-size: 0.9em;
         }
 
@@ -126,96 +130,97 @@
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             font-weight: 600;
             color: #333;
+            font-size: 16px;
         }
 
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
+        .form-group input {
             width: 100%;
-            padding: 12px;
+            padding: 16px;
             border: 2px solid #e1e1e1;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
             transition: border-color 0.3s;
         }
 
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
+        .form-group input:focus {
             outline: none;
             border-color: #4CAF50;
         }
 
-        .form-group textarea {
-            min-height: 80px;
-            resize: vertical;
-        }
-
         .id-section {
             background: #f8f9fa;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 25px;
         }
 
         .id-input-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 20px;
+            align-items: flex-end;
         }
 
         .id-input-group input {
             flex: 1;
         }
 
+        .id-input-group button {
+            flex-shrink: 0;
+            width: auto;
+            min-width: 80px;
+        }
+
         .person-info {
             text-align: center;
-            margin-top: 15px;
+            margin-top: 20px;
         }
 
         .person-info h3 {
             color: #333;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
         }
 
         .person-image {
-            width: 150px;
-            height: 150px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             object-fit: cover;
             border: 4px solid #4CAF50;
-            margin: 10px auto;
+            margin: 0 auto 15px;
             display: block;
         }
 
         .image-placeholder {
-            width: 150px;
-            height: 150px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             background: #f0f0f0;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 10px auto;
+            margin: 0 auto 15px;
             border: 2px dashed #ccc;
             color: #666;
-            font-size: 0.9em;
+            font-size: 0.8em;
             text-align: center;
+            padding: 10px;
         }
 
         .btn {
-            padding: 12px 24px;
+            padding: 16px 24px;
             border: none;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            text-align: center;
         }
 
         .btn-primary {
@@ -240,6 +245,7 @@
         .btn-load {
             background: #17a2b8;
             color: white;
+            padding: 16px 20px;
         }
 
         .btn-load:hover {
@@ -249,8 +255,8 @@
         .success-message {
             background: #d4edda;
             color: #155724;
-            padding: 15px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 10px;
             margin: 15px 0;
             text-align: center;
             display: none;
@@ -259,8 +265,8 @@
         .error-message {
             background: #f8d7da;
             color: #721c24;
-            padding: 15px;
-            border-radius: 8px;
+            padding: 16px;
+            border-radius: 10px;
             margin: 15px 0;
             text-align: center;
             display: none;
@@ -269,7 +275,7 @@
         .loading {
             display: none;
             text-align: center;
-            padding: 10px;
+            padding: 12px;
             color: #666;
         }
 
@@ -285,12 +291,46 @@
             60% { content: '...'; }
             80%, 100% { content: ''; }
         }
+
+        /* Mobile optimizations */
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+            
+            .main-app, .github-auth {
+                padding: 20px 15px;
+            }
+            
+            .id-section {
+                padding: 20px 15px;
+            }
+            
+            .form-group input, .btn {
+                padding: 18px 16px;
+                font-size: 16px;
+            }
+            
+            .id-input-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .id-input-group button {
+                width: 100%;
+                min-width: auto;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>📱 Enhanced Label Entry</h1>
+            <h1>🌳 SwipeTree Family Labels</h1>
             <p>Auto-sync with GitHub repository</p>
         </div>
 
@@ -355,44 +395,13 @@
 
             <form id="labelForm">
                 <div class="form-group">
-                    <label for="firstName">First Name</label>
-                    <input type="text" id="firstName" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="lastName">Last Name</label>
-                    <input type="text" id="lastName" required>
-                </div>
-
-                <div class="form-group">
-                    <label for="birthDate">Birth Date</label>
-                    <input type="date" id="birthDate">
+                    <label for="personName">Name</label>
+                    <input type="text" id="personName" placeholder="Full name" required>
                 </div>
 
                 <div class="form-group">
                     <label for="location">Location</label>
-                    <input type="text" id="location" placeholder="City, State or Region">
-                </div>
-
-                <div class="form-group">
-                    <label for="relationship">Relationship</label>
-                    <select id="relationship">
-                        <option value="">Select relationship</option>
-                        <option value="parent">Parent</option>
-                        <option value="child">Child</option>
-                        <option value="spouse">Spouse</option>
-                        <option value="sibling">Sibling</option>
-                        <option value="grandparent">Grandparent</option>
-                        <option value="grandchild">Grandchild</option>
-                        <option value="aunt-uncle">Aunt/Uncle</option>
-                        <option value="cousin">Cousin</option>
-                        <option value="other">Other</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="notes">Notes</label>
-                    <textarea id="notes" placeholder="Additional information about this person"></textarea>
+                    <input type="text" id="location" placeholder="City, State or Region" required>
                 </div>
 
                 <button type="submit" class="btn btn-primary" id="saveBtn">Save to GitHub</button>
@@ -484,8 +493,8 @@
         function loadPersonData(personId) {
             personTitle.textContent = `Person ID: ${personId}`;
             
-            // Try to load image
-            const imageBaseUrl = 'https://raw.githubusercontent.com/allofusbhere/family-tree-images/main/';
+            // Try to load image using GitHub Pages URL (more reliable than raw)
+            const imageBaseUrl = 'https://allofusbhere.github.io/family-tree-images/';
             const imageUrl = `${imageBaseUrl}${personId}.jpg`;
             
             const img = new Image();
@@ -507,10 +516,8 @@
             // Pre-fill form if label exists
             if (labels[personId]) {
                 const label = labels[personId];
-                document.getElementById('fullName').value = label.name || '';
-                document.getElementById('birthDate').value = label.birthDate || '';
+                document.getElementById('personName').value = label.firstName || '';
                 document.getElementById('location').value = label.location || '';
-                document.getElementById('notes').value = label.notes || '';
             } else {
                 clearForm();
             }
@@ -526,14 +533,23 @@
                 return;
             }
 
+            const personName = document.getElementById('personName').value.trim();
+            const location = document.getElementById('location').value.trim();
+
+            if (!personName || !location) {
+                alert('Please enter both name and location');
+                return;
+            }
+
+            // Maintain same data structure as existing system
             const labelData = {
                 personId: personId,
-                firstName: document.getElementById('firstName').value,
-                lastName: document.getElementById('lastName').value,
-                birthDate: document.getElementById('birthDate').value,
-                location: document.getElementById('location').value,
-                relationship: document.getElementById('relationship').value,
-                notes: document.getElementById('notes').value,
+                firstName: personName,  // Put full name in firstName field
+                lastName: "",           // Keep empty but maintain structure
+                birthDate: "",          // Keep empty but maintain structure
+                location: location,
+                relationship: "",       // Keep empty but maintain structure
+                notes: "",             // Keep empty but maintain structure
                 lastUpdated: new Date().toISOString()
             };
 
