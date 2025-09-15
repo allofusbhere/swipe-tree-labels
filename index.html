@@ -398,6 +398,8 @@ img{-webkit-touch-callout:none}
   async function handleParentsSwipe(){ 
     const p=parentOf(state.anchorId); const cards=[];
     if(p){ 
+      await loadSpouseMap();
+      
       const ok=await exists(idToSrc(p)); 
       const personData = await getPersonData(p);
       cards.push({
@@ -407,36 +409,48 @@ img{-webkit-touch-callout:none}
         details: personData.location || ''
       });
       
-      // Check for spouse (.1) and co-parent (.0) partners
-      const spouse = p + '.1';
-      const coParent = p + '.0';
-      
-      const spouseExists = await exists(idToSrc(spouse));
-      const coParentExists = await exists(idToSrc(coParent));
-      
-      if (spouseExists) {
-        const spouseData = await getPersonData(spouse);
+      // Check spouse_link.json first for independent spouse
+      const linkedSpouse = state.spouseMap[p];
+      if (linkedSpouse && await exists(idToSrc(linkedSpouse))) {
+        const linkedSpouseData = await getPersonData(linkedSpouse);
         cards.push({
-          id: spouse, 
-          src: idToSrc(spouse), 
-          name: spouseData.name,
-          details: spouseData.location || ''
-        });
-      } else if (coParentExists) {
-        const coParentData = await getPersonData(coParent);
-        cards.push({
-          id: coParent, 
-          src: idToSrc(coParent), 
-          name: `Co-Parent: ${coParentData.name}`,
-          details: coParentData.location || ''
+          id: linkedSpouse, 
+          src: idToSrc(linkedSpouse), 
+          name: linkedSpouseData.name,
+          details: linkedSpouseData.location || ''
         });
       } else {
-        cards.push({
-          id: 'Parent2', 
-          src: PLACEHOLDER, 
-          name: '',
-          details: ''
-        }); 
+        // Fall back to .1 spouse and .0 co-parent system
+        const spouse = p + '.1';
+        const coParent = p + '.0';
+        
+        const spouseExists = await exists(idToSrc(spouse));
+        const coParentExists = await exists(idToSrc(coParent));
+        
+        if (spouseExists) {
+          const spouseData = await getPersonData(spouse);
+          cards.push({
+            id: spouse, 
+            src: idToSrc(spouse), 
+            name: spouseData.name,
+            details: spouseData.location || ''
+          });
+        } else if (coParentExists) {
+          const coParentData = await getPersonData(coParent);
+          cards.push({
+            id: coParent, 
+            src: idToSrc(coParent), 
+            name: `Co-Parent: ${coParentData.name}`,
+            details: coParentData.location || ''
+          });
+        } else {
+          cards.push({
+            id: 'Parent2', 
+            src: PLACEHOLDER, 
+            name: '',
+            details: ''
+          }); 
+        }
       }
     }
     openGrid('Parents', cards, 'parents'); state.gridType='parents'; 
