@@ -17,7 +17,7 @@ img{-webkit-touch-callout:none}
 .btn.subtle{background:#0e0e0e}
 .btn:active{transform:scale(.98)}
 
-/* Navigation Controls */
+/* ADDED: Navigation Controls */
 .nav-controls{display:flex;justify-content:center;gap:.5rem;padding:.75rem;background:#0a0a0a;border-bottom:1px solid #222;}
 .nav-btn{background:#1a1a1a;border:1px solid #333;color:#fff;padding:.6rem 1rem;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:500;transition:all .2s ease;}
 .nav-btn:hover{background:#2a2a2a;border-color:#444;}
@@ -61,7 +61,7 @@ img{-webkit-touch-callout:none}
       <button id="backBtn" class="btn subtle">← Back</button>
     </div>
     
-    <!-- Navigation Controls -->
+    <!-- ADDED: Navigation Controls -->
     <div class="nav-controls">
       <button class="nav-btn" id="navParents">PARENTS</button>
       <button class="nav-btn" id="navPartner">PARTNER</button>
@@ -153,14 +153,14 @@ img{-webkit-touch-callout:none}
   const editCancel = document.getElementById('editCancel');
   const editSave = document.getElementById('editSave');
 
-  // Navigation button elements
+  // ADDED: Navigation button elements
   const navParents = document.getElementById('navParents');
   const navPartner = document.getElementById('navPartner');
   const navSiblings = document.getElementById('navSiblings');
   const navChildren = document.getElementById('navChildren');
 
   function idToSrc(id){ return IMG_BASE + id + IMG_EXT; }
-  function exists(src){ return new Promise(r=>{ const i=new Image(); i.onload=()=>r(true); i.onerror=()=>r(false); i.src=src; }); }
+  function exists(src){ return new Promise(r=>{ const i=new Image(); i.onload=()=>r(true); i.onerror=()=>r(false); i.src=src; }); } // REMOVED: cacheBust()
   const cacheBust = ()=> `?v=${Date.now()%1e7}`;
   function setURLHash(id){ try{ history.replaceState(null,'',`#${encodeURIComponent(id)}`); }catch{} }
 
@@ -337,7 +337,7 @@ img{-webkit-touch-callout:none}
     if(state.anchorId && pushHistory) state.historyStack.push(state.anchorId);
     state.anchorId=idStr; setURLHash(idStr);
     const src=idToSrc(idStr); const ok=await exists(src);
-    anchorImg.src = ok ? src : PLACEHOLDER;
+    anchorImg.src = ok ? src : PLACEHOLDER; // REMOVED: cacheBust()
     anchorImg.classList.remove('highlight');
     
     // Load and display family data
@@ -367,7 +367,7 @@ img{-webkit-touch-callout:none}
     cards.forEach(c=>{
       const tile=document.createElement('div'); tile.className='tile noselect'; tile.dataset.id=c.id;
       const detailsHtml = c.details ? `<div class="tile-details">${c.details}</div>` : '';
-      tile.innerHTML=`<img alt="${c.id}" src="${c.src}"><div class="label">${c.name||''}</div>${detailsHtml}`;
+      tile.innerHTML=`<img alt="${c.id}" src="${c.src}"><div class="label">${c.name||''}</div>${detailsHtml}`; // REMOVED: cacheBust()
       tile.addEventListener('click', async ()=>{ closeGrid(); await setAnchor(c.id); });
       grid.appendChild(tile);
     });
@@ -533,7 +533,7 @@ img{-webkit-touch-callout:none}
     closeEdit(); 
   });
 
-  // Navigation button event handlers
+  // ADDED: Navigation button event handlers
   navParents.addEventListener('click', handleParentsSwipe);
   navPartner.addEventListener('click', handleSpouseSwipe);
   navSiblings.addEventListener('click', handleSiblingsSwipe);
