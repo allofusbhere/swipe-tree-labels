@@ -712,6 +712,10 @@ img{-webkit-touch-callout:none}
   async function handleChildrenSwipe(){ 
     const childIds = childrenOf(state.anchorId);
     console.log('🔍 Generated child IDs for', state.anchorId, ':', childIds);
+    
+    // TEMP DEBUG: Show generated IDs on screen
+    alert(`DEBUG: Person ${state.anchorId} generated child IDs: ${childIds.join(', ')}`);
+    
     const cards = await existingCards(childIds);
     openGrid('Children', cards, 'children'); 
     state.gridType='children'; 
