@@ -16,13 +16,6 @@ img{-webkit-touch-callout:none}
 .btn{background:#1f1f1f;border:1px solid #333;color:#fff;padding:.45rem .8rem;border-radius:.75rem;cursor:pointer}
 .btn.subtle{background:#0e0e0e}
 .btn:active{transform:scale(.98)}
-
-/* Enhancement #1: Navigation Controls */
-.nav-controls{display:flex;justify-content:center;gap:.5rem;padding:.75rem;background:#0a0a0a;border-bottom:1px solid #222;}
-.nav-btn{background:#1a1a1a;border:1px solid #333;color:#fff;padding:.6rem 1rem;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:500;transition:all .2s ease;}
-.nav-btn:hover{background:#2a2a2a;border-color:#444;}
-.nav-btn:active{transform:scale(.95);background:#333;}
-
 #stage{position:relative;flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:1rem}
 #anchorWrap{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem}
 #anchorImg{max-width:min(75vw,560px);max-height:min(65vh,560px);object-fit:contain;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.6);border:1px solid #222}
@@ -58,14 +51,6 @@ img{-webkit-touch-callout:none}
       <div class="brand">SwipeTree</div>
       <div class="spacer"></div>
       <button id="backBtn" class="btn subtle">← Back</button>
-    </div>
-    
-    <!-- Enhancement #1: Navigation Controls -->
-    <div class="nav-controls">
-      <button class="nav-btn" id="navParents">PARENTS</button>
-      <button class="nav-btn" id="navPartner">PARTNER</button>
-      <button class="nav-btn" id="navSiblings">SIBLINGS</button>
-      <button class="nav-btn" id="navChildren">CHILDREN</button>
     </div>
     
     <div id="stage">
@@ -438,12 +423,6 @@ img{-webkit-touch-callout:none}
   ['touchmove','mousemove'].forEach(ev=>anchorWrap.addEventListener(ev,onTouchMove,{passive:true}));
   ['touchend','mouseup','mouseleave'].forEach(ev=>anchorWrap.addEventListener(ev,onTouchEnd,{passive:true}));
 
-  // Enhancement #1: Navigation button event listeners
-  document.getElementById('navParents').addEventListener('click', handleParentsSwipe);
-  document.getElementById('navPartner').addEventListener('click', handleSpouseSwipe);
-  document.getElementById('navSiblings').addEventListener('click', handleSiblingsSwipe);
-  document.getElementById('navChildren').addEventListener('click', handleChildrenSwipe);
-
   backBtn.addEventListener('click', async ()=>{ 
     if(state.gridOpen){ closeGrid(); return; } 
     const prev=state.historyStack.pop(); 
@@ -460,7 +439,7 @@ img{-webkit-touch-callout:none}
   (async function boot(){ 
     await tryLoadNamesMap(); 
     await loadFamilyLabels(); // Load family labels on startup
-    let start=decodeURIComponent((location.hash||'').replace(/^#/,'')).replace(/\/?$/, '').trim(); 
+    let start=decodeURIComponent((location.hash||'').replace(/^#/,'')).trim(); 
     if(!start) start='100000'; 
     await setAnchor(start,false); 
   })();
