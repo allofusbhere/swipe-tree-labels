@@ -349,7 +349,14 @@ img{-webkit-touch-callout:none}
     return out; 
   }
 
-  async function handleChildrenSwipe(){ openGrid('Children', await existingCards(childrenOf(state.anchorId)), 'children'); state.gridType='children'; }
+  // DEBUG VERSION - Added console.log to see what child IDs are generated
+  async function handleChildrenSwipe(){ 
+    const childIds = childrenOf(state.anchorId);
+    console.log('Generated child IDs for', state.anchorId, ':', childIds);
+    openGrid('Children', await existingCards(childIds), 'children'); 
+    state.gridType='children'; 
+  }
+
   async function handleSiblingsSwipe(){ openGrid('Siblings', await existingCards(siblingsOf(state.anchorId)), 'siblings'); state.gridType='siblings'; }
   async function handleParentsSwipe(){ 
     const p=parentOf(state.anchorId); const cards=[];
