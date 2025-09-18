@@ -420,9 +420,10 @@ img{-webkit-touch-callout:none}
     
     if (linkedSpouse) {
       // Current anchor is a spouse_link.json partner
-      // Show children of their LINKED SPOUSE (the shared children)
-      childrenIds = childrenOf(linkedSpouse);
-      console.log(`Showing shared children of linked spouse ${linkedSpouse} for spouse ${state.anchorId}`);
+      // Always use the FIRST ID in the pair for children calculation
+      const firstParentId = getFirstParentId(state.anchorId, linkedSpouse);
+      childrenIds = childrenOf(firstParentId);
+      console.log(`Showing shared children of first parent ${firstParentId} for spouse pair [${firstParentId}, ${linkedSpouse === firstParentId ? state.anchorId : linkedSpouse}]`);
     } else {
       // Normal case - show children of current anchor
       childrenIds = childrenOf(state.anchorId);
@@ -430,6 +431,16 @@ img{-webkit-touch-callout:none}
     
     openGrid('Children', await existingCards(childrenIds), 'children'); 
     state.gridType='children'; 
+  }
+
+  // Helper function to determine the first parent ID in a spouse_link.json pair
+  function getFirstParentId(anchorId, linkedSpouseId) {
+    // Compare the two IDs numerically to determine which comes first
+    // The smaller ID is typically the first parent in the JSON structure
+    const anchorNum = parseInt(anchorId.replace(/\./g, ''));
+    const spouseNum = parseInt(linkedSpouseId.replace(/\./g, ''));
+    
+    return anchorNum < spouseNum ? anchorId : linkedSpouseId;
   }
 
   async function handleSiblingsSwipe(){ openGrid('Siblings', await existingCards(siblingsOf(state.anchorId)), 'siblings'); state.gridType='siblings'; }
