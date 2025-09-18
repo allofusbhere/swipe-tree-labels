@@ -409,7 +409,29 @@ img{-webkit-touch-callout:none}
     return out; 
   }
 
-  async function handleChildrenSwipe(){ openGrid('Children', await existingCards(childrenOf(state.anchorId)), 'children'); state.gridType='children'; }
+  // FIXED: Handle children for spouse_link.json partners
+  async function handleChildrenSwipe(){ 
+    await loadSpouseMap(); // Ensure spouse map is loaded
+    
+    let childrenIds;
+    
+    // Check if current anchor is a spouse_link.json partner
+    const linkedSpouse = state.spouseMap[state.anchorId];
+    
+    if (linkedSpouse) {
+      // Current anchor is a spouse_link.json partner
+      // Show children of their LINKED SPOUSE (the shared children)
+      childrenIds = childrenOf(linkedSpouse);
+      console.log(`Showing shared children of linked spouse ${linkedSpouse} for spouse ${state.anchorId}`);
+    } else {
+      // Normal case - show children of current anchor
+      childrenIds = childrenOf(state.anchorId);
+    }
+    
+    openGrid('Children', await existingCards(childrenIds), 'children'); 
+    state.gridType='children'; 
+  }
+
   async function handleSiblingsSwipe(){ openGrid('Siblings', await existingCards(siblingsOf(state.anchorId)), 'siblings'); state.gridType='siblings'; }
   
   async function handleParentsSwipe(){ 
