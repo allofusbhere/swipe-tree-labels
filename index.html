@@ -19,8 +19,8 @@ img{-webkit-touch-callout:none}
 
 /* Navigation Buttons */
 .nav-bar{display:flex;justify-content:center;align-items:center;gap:.5rem;padding:.5rem;background:#0a0a0a;border-bottom:1px solid #222}
-.nav-context{color:#ccc;font-size:.85rem;margin-right:1rem;opacity:.9}
-.nav-context span{color:#7aa8ff;font-weight:500}
+.nav-context{color:#ccc;font-size:.9rem;margin-right:1rem;opacity:.9}
+.nav-context span{color:#7aa8ff;font-weight:600;font-size:1rem;text-shadow:0 1px 2px rgba(0,0,0,0.3)}
 .nav-btn{background:#1a1a1a;border:1px solid #333;color:#ccc;padding:.4rem .8rem;font-size:.85rem;cursor:pointer;transition:all .2s;border-radius:0}
 .nav-btn:first-of-type{border-radius:.5rem 0 0 .5rem}
 .nav-btn:last-child{border-radius:0 .5rem .5rem 0}
@@ -30,11 +30,11 @@ img{-webkit-touch-callout:none}
 #stage{position:relative;flex:1;overflow:hidden;display:flex;align-items:center;justify-content:center;padding:1rem}
 #anchorWrap{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.5rem}
 #anchorImg{width:min(80vw,500px);height:min(70vh,500px);object-fit:contain;border-radius:16px;box-shadow:0 10px 40px rgba(0,0,0,.6);border:1px solid #222}
-.name{font-size:1.1rem;opacity:.95;min-height:1.3em}
+.name{font-size:1.3rem;font-weight:600;color:#7aa8ff;opacity:1;min-height:1.4em;text-shadow:0 1px 3px rgba(0,0,0,0.3)}
 .details{font-size:0.9rem;opacity:.75;text-align:center;margin-top:.25rem}
 .details .date{color:#7aa8ff}
 .details .location{color:#90ee90}
-.details .notes{font-style:italic;margin-top:.25rem;opacity:.6}
+.details .notes{font-style:italic;margin-top:.5rem;padding:.5rem;background:rgba(255,255,255,0.05);border-radius:8px;font-size:0.85rem;opacity:.8;line-height:1.4;max-width:400px;margin-left:auto;margin-right:auto}
 #gridOverlay{position:absolute;inset:0;background:#000;display:flex;flex-direction:column;z-index:4;align-items:center}
 #gridOverlay.hidden{display:none}
 .gridHeader{padding:.5rem 1rem;border-bottom:1px solid #222;width:100%;max-width:980px}
