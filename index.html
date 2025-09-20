@@ -20,7 +20,7 @@ img{-webkit-touch-callout:none}
 /* Navigation Buttons */
 .nav-bar{display:flex;justify-content:center;align-items:center;gap:.5rem;padding:.5rem;background:#0a0a0a;border-bottom:1px solid #222}
 .nav-context{color:#ccc;font-size:.9rem;margin-right:1rem;opacity:.9}
-.nav-context span{color:#7aa8ff;font-weight:600;font-size:1rem;text-shadow:0 1px 2px rgba(0,0,0,0.3)}
+.nav-context span{color:#ff4757;font-weight:700;font-size:1.2rem;text-shadow:0 2px 4px rgba(0,0,0,0.4);letter-spacing:0.3px}
 .nav-btn{background:#1a1a1a;border:1px solid #333;color:#ccc;padding:.4rem .8rem;font-size:.85rem;cursor:pointer;transition:all .2s;border-radius:0}
 .nav-btn:first-of-type{border-radius:.5rem 0 0 .5rem}
 .nav-btn:last-child{border-radius:0 .5rem .5rem 0}
@@ -350,18 +350,10 @@ img{-webkit-touch-callout:none}
     // Update navigation context
     navAnchorName.textContent = displayName;
     
-    // Display location under name (if available)
-    let details = '';
-    if (personData.location) {
-      details = `<span class="location">${personData.location}</span>`;
-    }
-    if (personData.birthDate) {
-      if (details) details += ' | ';
-      details += `<span class="date">${personData.birthDate}</span>`;
-    }
-    anchorDetails.innerHTML = details;
+    // Display details including notes
+    anchorDetails.innerHTML = formatDetails(personData);
     
-    console.log(`Displaying person ${idStr}: "${personData.name}" from "${personData.location}"`);
+    console.log(`Displaying person ${idStr}: "${personData.name}" from "${personData.location}" with notes: "${personData.notes}"`);
     
     requestAnimationFrame(()=>{ anchorImg.classList.add('highlight'); setTimeout(()=>anchorImg.classList.remove('highlight'),350); });
   }
