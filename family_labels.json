@@ -387,7 +387,10 @@
     "location": "Stockbridge GA",
     "relationship": "",
     "notes": "",
-    "lastUpdated": "2025-09-15T02:52:56.147Z"
+    "lastUpdated": "2025-09-15T02:52:56.147Z",
+    "family_password": "sweetdream2025",
+    "password_assigned": "2025-09-22T22:34:11.559Z",
+    "assigned_by": "admin"
   },
   "151000": {
     "personId": "151000",
@@ -758,8 +761,8 @@
     "relationship": "",
     "notes": "",
     "lastUpdated": "2025-09-14T23:16:47.403Z",
-    "family_password": "freshhome11",
-    "password_assigned": "2025-09-22T22:29:52.566Z",
+    "family_password": "sunnyhome2025",
+    "password_assigned": "2025-09-22T22:30:19.926Z",
     "assigned_by": "admin"
   },
   "340000": {
