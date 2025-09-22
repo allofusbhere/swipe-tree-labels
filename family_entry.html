@@ -423,7 +423,6 @@
     <script>
         let familyData = {};
         let labels = {};
-        let spouseLinks = {};
         let currentEditingId = null;
         let familyHead = null;
         let editableMembers = [];
@@ -431,7 +430,6 @@
         const username = 'allofusbhere';
         const repo = 'swipe-tree-labels';
         const labelsFile = 'family_labels.json';
-        const spouseFile = 'spouse_link.json';
         
         // Elements
         const accessBtn = document.getElementById('accessBtn');
@@ -477,9 +475,6 @@
                     const content = atob(data.content);
                     labels = JSON.parse(content);
                     
-                    // Also load spouse_link.json
-                    await loadSpouseLinks();
-                    
                     // Validate parent ID and password
                     if (labels[parentId] && labels[parentId].family_password === password) {
                         familyHead = parentId;
@@ -510,54 +505,11 @@
             }
         });
 
-        function findSpouse(headId) {
-            const spouses = [];
-            
-            // Method 1: Check spouse_link.json for actual spouse relationships
-            if (spouseLinks[headId]) {
-                spouses.push(spouseLinks[headId]);
-            }
-            
-            // Method 2: Check for .1 and .0 spouse patterns
-            const spouse1 = headId + '.1';
-            const spouse0 = headId + '.0';
-            
-            if (labels[spouse1]) spouses.push(spouse1);
-            if (labels[spouse0]) spouses.push(spouse0);
-            
-            return spouses;
-        }
-
-        async function loadSpouseLinks() {
-            try {
-                const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${spouseFile}`, {
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json'
-                    }
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    const content = atob(data.content);
-                    spouseLinks = JSON.parse(content);
-                } else {
-                    console.log('spouse_link.json not found, continuing without spouse data');
-                    spouseLinks = {};
-                }
-            } catch (error) {
-                console.error('Error loading spouse links:', error);
-                spouseLinks = {};
-            }
-        }
-
         function calculateNuclearFamily(headId) {
             const members = [headId]; // Start with family head
             
-            // Add all spouses if they exist
-            const spouses = findSpouse(headId);
-            spouses.forEach(spouse => {
-                if (spouse) members.push(spouse);
-            });
+            // Add spouse if exists (check spouse_link.json logic here)
+            // For now, we'll skip spouse lookup and focus on children
             
             // Calculate children using correct generation multiplier system
             const baseId = parseInt(headId);
@@ -609,8 +561,7 @@
                 memberItem.className = 'member-item';
                 memberItem.onclick = () => selectMember(memberId);
                 
-                const relationship = memberId === familyHead ? 'You' : 
-                                   (memberId.startsWith(familyHead + '.') || spouseLinks[familyHead] === memberId) ? 'Spouse' : 'Child';
+                const relationship = memberId === familyHead ? 'You' : 'Child';
                 const hasData = memberData.firstName && memberData.firstName !== 'No name set';
                 
                 memberItem.innerHTML = `
