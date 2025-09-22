@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GitHub Mobile Label Entry</title>
+    <title>SwipeTree Admin Label Entry</title>
     <style>
         * {
             box-sizing: border-box;
@@ -122,6 +122,60 @@
 
         .stats strong {
             color: #4CAF50;
+        }
+
+        .password-admin-section {
+            background: #fff3cd;
+            border: 2px solid #ffeaa7;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .password-admin-section h3 {
+            color: #856404;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .password-result {
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .password-result.hidden {
+            display: none;
+        }
+
+        .generated-password {
+            color: #0c5460;
+        }
+
+        .generated-password strong {
+            font-size: 1.1em;
+            color: #004085;
+        }
+
+        .generated-password span {
+            background: #17a2b8;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.2em;
+            display: inline-block;
+            margin: 10px 5px;
+            letter-spacing: 1px;
+        }
+
+        .password-result p {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #0c5460;
         }
 
         .form-group {
@@ -258,6 +312,15 @@
             background: #138496;
         }
 
+        .btn-password {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-password:hover {
+            background: #e0a800;
+        }
+
         .success-message {
             background: #d4edda;
             color: #155724;
@@ -308,7 +371,7 @@
                 max-width: 100%;
             }
             
-            .main-app, .github-auth {
+            .main-app, .github-auth, .password-admin-section {
                 padding: 20px 15px;
             }
             
@@ -336,8 +399,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🌳 SwipeTree Family Labels</h1>
-            <p>Auto-sync with GitHub repository</p>
+            <h1>🌳 SwipeTree Admin Portal</h1>
+            <p>Family labels + password management</p>
         </div>
 
         <div class="status disconnected" id="connectionStatus">
@@ -345,17 +408,17 @@
         </div>
 
         <div class="github-auth" id="githubAuth">
-            <h3>🔑 GitHub Authentication</h3>
+            <h3>🔑 Admin GitHub Authentication</h3>
             
             <div class="github-help">
-                <h4>Need a GitHub Token?</h4>
+                <h4>Admin Access Required</h4>
                 <ol>
                     <li>Go to GitHub → Settings → Developer settings</li>
                     <li>Personal access tokens → Generate new token</li>
                     <li>Check "repo" scope (full repository access)</li>
                     <li>Copy the token and paste below</li>
                 </ol>
-                <strong>Token is only stored for this session (secure)</strong>
+                <strong>Admin token allows family password management</strong>
             </div>
 
             <div class="form-group">
@@ -363,7 +426,7 @@
                 <input type="password" id="githubToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
             </div>
 
-            <button class="btn btn-primary" id="connectBtn">Connect to GitHub</button>
+            <button class="btn btn-primary" id="connectBtn">Connect as Admin</button>
             <div class="loading" id="loadingAuth">Connecting to GitHub</div>
         </div>
 
@@ -373,8 +436,26 @@
                 <div>Total Labels in Repo: <strong id="totalCount">0</strong></div>
             </div>
 
+            <!-- NEW: Admin Password Management Section -->
+            <div class="password-admin-section">
+                <h3>👤 Admin: Assign Family Passwords</h3>
+                
+                <div class="id-input-group">
+                    <input type="text" id="adminPersonId" placeholder="Person ID (e.g., 150000)" maxlength="10">
+                    <button class="btn btn-password" id="generatePasswordBtn">Generate Password</button>
+                </div>
+                
+                <div class="password-result hidden" id="passwordResult">
+                    <div class="generated-password">
+                        <strong>Generated Password: <span id="generatedPassword"></span></strong>
+                        <p>Give this password to the person for family access</p>
+                        <p><small>Password saved to their record automatically</small></p>
+                    </div>
+                </div>
+            </div>
+
             <div class="success-message" id="successMessage">
-                ✅ Label saved to GitHub successfully!
+                ✅ Changes saved to GitHub successfully!
             </div>
 
             <div class="error-message" id="errorMessage">
@@ -382,9 +463,9 @@
             </div>
 
             <div class="id-section">
-                <h3>Enter Person ID#</h3>
+                <h3>Edit Person Labels</h3>
                 <div class="id-input-group">
-                    <input type="text" id="personId" placeholder="e.g., 140000" maxlength="10">
+                    <input type="text" id="personId" placeholder="e.g., 150000" maxlength="10">
                     <button class="btn btn-load" id="loadBtn">Load</button>
                 </div>
                 
@@ -436,6 +517,14 @@
         const mainApp = document.getElementById('mainApp');
         const connectionStatus = document.getElementById('connectionStatus');
         const loadingAuth = document.getElementById('loadingAuth');
+        
+        // Password management elements
+        const adminPersonIdInput = document.getElementById('adminPersonId');
+        const generatePasswordBtn = document.getElementById('generatePasswordBtn');
+        const passwordResult = document.getElementById('passwordResult');
+        const generatedPasswordSpan = document.getElementById('generatedPassword');
+        
+        // Label editing elements
         const personIdInput = document.getElementById('personId');
         const loadBtn = document.getElementById('loadBtn');
         const personInfo = document.getElementById('personInfo');
@@ -470,7 +559,7 @@
                 });
 
                 if (response.ok) {
-                    connectionStatus.textContent = 'Connected to GitHub successfully';
+                    connectionStatus.textContent = 'Connected as Admin successfully';
                     connectionStatus.className = 'status connected';
                     githubAuth.classList.add('hidden');
                     mainApp.classList.remove('hidden');
@@ -490,7 +579,66 @@
             }
         });
 
-        // Load person data
+        // Password generation
+        generatePasswordBtn.addEventListener('click', async () => {
+            const personId = adminPersonIdInput.value.trim();
+            if (!personId) {
+                alert('Please enter a person ID');
+                return;
+            }
+
+            // Generate a family-friendly password
+            const adjectives = ['sunny', 'happy', 'bright', 'calm', 'sweet', 'gentle', 'warm', 'cool', 'fresh', 'clear'];
+            const nouns = ['tree', 'home', 'lake', 'hill', 'star', 'moon', 'bird', 'song', 'dream', 'path'];
+            const numbers = ['2024', '2025', Math.floor(Math.random() * 100).toString().padStart(2, '0')];
+            
+            const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+            const noun = nouns[Math.floor(Math.random() * nouns.length)];
+            const number = numbers[Math.floor(Math.random() * numbers.length)];
+            
+            const password = `${adjective}${noun}${number}`;
+
+            // Add password to the person's record
+            if (!labels[personId]) {
+                labels[personId] = {
+                    personId: personId,
+                    firstName: "",
+                    lastName: "",
+                    birthDate: "",
+                    location: "",
+                    relationship: "",
+                    notes: "",
+                    lastUpdated: new Date().toISOString()
+                };
+            }
+
+            labels[personId].family_password = password;
+            labels[personId].password_assigned = new Date().toISOString();
+            labels[personId].assigned_by = "admin";
+
+            try {
+                await saveLabelsToGitHub();
+                
+                // Show the generated password
+                generatedPasswordSpan.textContent = password;
+                passwordResult.classList.remove('hidden');
+                
+                showSuccess();
+                updateCounts();
+                
+                // Clear the admin input after success
+                setTimeout(() => {
+                    adminPersonIdInput.value = '';
+                    passwordResult.classList.add('hidden');
+                }, 10000); // Hide after 10 seconds
+                
+            } catch (error) {
+                showError();
+                console.error('Password save error:', error);
+            }
+        });
+
+        // Load person data for label editing
         loadBtn.addEventListener('click', () => {
             const personId = personIdInput.value.trim();
             if (!personId) {
@@ -504,7 +652,7 @@
         function loadPersonData(personId) {
             personTitle.textContent = `Person ID: ${personId}`;
             
-            // Try to load image using GitHub Pages URL (more reliable than raw)
+            // Try to load image using GitHub Pages URL
             const imageBaseUrl = 'https://allofusbhere.github.io/family-tree-images/';
             const imageUrl = `${imageBaseUrl}${personId}.jpg`;
             
@@ -535,7 +683,7 @@
             }
         }
 
-        // Form submission
+        // Form submission for label editing
         labelForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
@@ -557,14 +705,21 @@
             // Maintain same data structure as existing system
             const labelData = {
                 personId: personId,
-                firstName: personName,  // Put full name in firstName field
-                lastName: "",           // Keep empty but maintain structure
-                birthDate: "",          // Keep empty but maintain structure
+                firstName: personName,
+                lastName: "",
+                birthDate: "",
                 location: location,
-                relationship: "",       // Keep empty but maintain structure
-                notes: notes,          // Now captures the notes field
+                relationship: "",
+                notes: notes,
                 lastUpdated: new Date().toISOString()
             };
+
+            // Preserve existing password if it exists
+            if (labels[personId] && labels[personId].family_password) {
+                labelData.family_password = labels[personId].family_password;
+                labelData.password_assigned = labels[personId].password_assigned;
+                labelData.assigned_by = labels[personId].assigned_by;
+            }
 
             // Add to labels object
             const isNewLabel = !labels[personId];
