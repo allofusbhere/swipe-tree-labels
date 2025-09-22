@@ -423,6 +423,7 @@
     <script>
         let familyData = {};
         let labels = {};
+        let spouseLinks = {};
         let currentEditingId = null;
         let familyHead = null;
         let editableMembers = [];
@@ -430,6 +431,7 @@
         const username = 'allofusbhere';
         const repo = 'swipe-tree-labels';
         const labelsFile = 'family_labels.json';
+        const spouseFile = 'spouse_link.json';
         
         // Elements
         const accessBtn = document.getElementById('accessBtn');
@@ -475,6 +477,9 @@
                     const content = atob(data.content);
                     labels = JSON.parse(content);
                     
+                    // Also load spouse_link.json
+                    await loadSpouseLinks();
+                    
                     // Validate parent ID and password
                     if (labels[parentId] && labels[parentId].family_password === password) {
                         familyHead = parentId;
@@ -505,15 +510,73 @@
             }
         });
 
+        function findSpouse(headId) {
+            const spouses = [];
+            
+            // Method 1: Check spouse_link.json for actual spouse relationships
+            if (spouseLinks[headId]) {
+                spouses.push(spouseLinks[headId]);
+            }
+            
+            // Method 2: Check for .1 and .0 spouse patterns
+            const spouse1 = headId + '.1';
+            const spouse0 = headId + '.0';
+            
+            if (labels[spouse1]) spouses.push(spouse1);
+            if (labels[spouse0]) spouses.push(spouse0);
+            
+            return spouses;
+        }
+
+        async function loadSpouseLinks() {
+            try {
+                const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/${spouseFile}`, {
+                    headers: {
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    const content = atob(data.content);
+                    spouseLinks = JSON.parse(content);
+                } else {
+                    console.log('spouse_link.json not found, continuing without spouse data');
+                    spouseLinks = {};
+                }
+            } catch (error) {
+                console.error('Error loading spouse links:', error);
+                spouseLinks = {};
+            }
+        }
+
         function calculateNuclearFamily(headId) {
             const members = [headId]; // Start with family head
             
-            // Add spouse if exists (check spouse_link.json logic here)
-            // For now, we'll skip spouse lookup and focus on children
+            // Add all spouses if they exist
+            const spouses = findSpouse(headId);
+            spouses.forEach(spouse => {
+                if (spouse) members.push(spouse);
+            });
             
-            // Calculate children using generation multiplier system
+            // Calculate children using correct generation multiplier system
             const baseId = parseInt(headId);
-            const generationMultiplier = 10000; // 2nd generation multiplier
+            
+            // Determine generation multiplier based on the ID pattern
+            // Lawrence (150000) is 2nd generation, children use 1000 multiplier
+            // Pattern: 150000 → 151000, 152000, 153000, etc.
+            let generationMultiplier = 1000; // For 2nd generation parents like Lawrence
+            
+            // If this is 1st generation (100000-900000), children use 10000 multiplier
+            if (headId.endsWith('00000')) {
+                generationMultiplier = 10000;
+            }
+            // If this is 3rd generation (151000-159000), children use 100 multiplier  
+            else if (headId.endsWith('1000') || headId.endsWith('2000') || headId.endsWith('3000') || 
+                     headId.endsWith('4000') || headId.endsWith('5000') || headId.endsWith('6000') ||
+                     headId.endsWith('7000') || headId.endsWith('8000') || headId.endsWith('9000')) {
+                generationMultiplier = 100;
+            }
             
             // Check for children (birth order 1-9)
             for (let birthOrder = 1; birthOrder <= 9; birthOrder++) {
@@ -546,7 +609,8 @@
                 memberItem.className = 'member-item';
                 memberItem.onclick = () => selectMember(memberId);
                 
-                const relationship = memberId === familyHead ? 'You' : 'Child';
+                const relationship = memberId === familyHead ? 'You' : 
+                                   (memberId.startsWith(familyHead + '.') || spouseLinks[familyHead] === memberId) ? 'Spouse' : 'Child';
                 const hasData = memberData.firstName && memberData.firstName !== 'No name set';
                 
                 memberItem.innerHTML = `
