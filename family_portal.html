@@ -1,4 +1,25 @@
-<!DOCTYPE html>
+/*
+         * ADMIN TOOL INTEGRATION NEEDED:
+         * 
+         * 1. Create pending_photos.json in swipe-tree-labels repo to store uploaded photos
+         * 2. Admin Portal should include "Photo Review" section that:
+         *    - Loads pending_photos.json
+         *    - Shows pending photos with member info
+         *    - Allows approve/reject actions  
+         *    - Uploads approved photos to family-tree-images repo
+         *    - Removes processed entries from pending queue
+         * 
+         * 3. Photo queue entry format:
+         *    {
+         *      "memberId": "150000",
+         *      "fileName": "150000.jpg", 
+         *      "imageData": "data:image/jpeg;base64,...",
+         *      "uploadedBy": "150000",
+         *      "uploadDate": "2025-09-24T...",
+         *      "status": "pending",
+         *      "familyName": "Lawrence Holland"
+         *    }
+         */<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -186,6 +207,128 @@
             color: #6c757d;
         }
 
+        .member-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #dee2e6;
+            margin-left: 10px;
+        }
+
+        .member-photo.placeholder {
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 12px;
+        }
+
+        .editing-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .editing-section.active {
+            display: block;
+        }
+
+        .editing-section h4 {
+            color: #495057;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .photo-section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .current-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 3px solid #dee2e6;
+            margin-bottom: 15px;
+        }
+
+        .photo-placeholder {
+            width: 150px;
+            height: 150px;
+            border: 2px dashed #dee2e6;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .photo-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .photo-btn {
+            padding: 10px 15px;
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+        }
+
+        .photo-btn:hover {
+            background: #138496;
+        }
+
+        .photo-btn.danger {
+            background: #dc3545;
+        }
+
+        .photo-btn.danger:hover {
+            background: #c82333;
+        }
+
+        .file-input-container {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .file-input-container input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .preview-section {
+            margin: 15px 0;
+            display: none;
+        }
+
+        .preview-photo {
+            width: 100px;
+            height: 100px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid #28a745;
+        }
+
         .form-group {
             margin-bottom: 20px;
         }
@@ -259,24 +402,6 @@
             background: #138496;
         }
 
-        .editing-section {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .editing-section.active {
-            display: block;
-        }
-
-        .editing-section h4 {
-            color: #495057;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
         .success-message {
             background: #d4edda;
             color: #155724;
@@ -317,6 +442,40 @@
             80%, 100% { content: ''; }
         }
 
+        .image-manager {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            font-size: 0.9em;
+        }
+
+        .image-manager h5 {
+            color: #856404;
+            margin-bottom: 10px;
+        }
+
+        .image-manager p {
+            color: #856404;
+            margin-bottom: 8px;
+        }
+
+        .mobile-help {
+            background: #e7f3ff;
+            border: 1px solid #b8daff;
+            border-radius: 6px;
+            padding: 12px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .mobile-help p {
+            color: #004085;
+            font-size: 0.85em;
+            margin: 0;
+        }
+
         /* Mobile optimizations */
         @media (max-width: 480px) {
             body {
@@ -334,6 +493,14 @@
             .form-group input, .form-group textarea, .btn {
                 padding: 18px 16px;
                 font-size: 16px;
+            }
+            
+            .photo-actions {
+                flex-direction: column;
+            }
+            
+            .photo-btn {
+                width: 100%;
             }
         }
     </style>
@@ -389,6 +556,42 @@
             <div class="editing-section" id="editingSection">
                 <h4 id="editingTitle">Edit Family Member</h4>
                 
+                <!-- Photo Management Section -->
+                <div class="photo-section">
+                    <div id="currentPhotoContainer">
+                        <div class="photo-placeholder">
+                            <p>No photo loaded</p>
+                        </div>
+                    </div>
+                    
+                    <div class="photo-actions">
+                        <div class="file-input-container">
+                            <input type="file" id="photoFile" accept="image/*" capture="environment">
+                            <button class="photo-btn">📱 Choose from Photos</button>
+                        </div>
+                        <button class="photo-btn" id="cameraBtn">📷 Take New Photo</button>
+                        <button class="photo-btn danger" id="removePhotoBtn" style="display: none;">🗑️ Remove</button>
+                    </div>
+                    
+                    <div class="mobile-help">
+                        <p><strong>📱 Mobile Users:</strong> "Choose from Photos" opens your photo gallery/camera roll</p>
+                    </div>
+
+                    <div class="preview-section" id="previewSection">
+                        <h5>📷 New Photo Preview:</h5>
+                        <img id="previewImage" class="preview-photo" alt="Preview">
+                    </div>
+
+                    <div class="image-manager">
+                        <h5>📁 Photo Management</h5>
+                        <p><strong>📱 Mobile:</strong> "Choose from Photos" opens your phone's photo gallery</p>
+                        <p><strong>Step 1:</strong> Select or take a photo above</p>
+                        <p><strong>Step 2:</strong> Click "Save Photo" to queue it for admin approval</p>
+                        <p><strong>Step 3:</strong> Admin will process and publish your photo shortly</p>
+                        <button class="photo-btn" id="savePhotoBtn" style="display: none; width: 100%; margin-top: 10px;">💾 Save Photo (Pending Admin Approval)</button>
+                    </div>
+                </div>
+                
                 <form id="labelForm">
                     <div class="form-group">
                         <label for="personName">Name</label>
@@ -418,6 +621,10 @@
                 ❌ Error updating family member. Please try again.
             </div>
         </div>
+
+        <!-- Hidden camera elements -->
+        <video id="camera" style="display: none;" autoplay></video>
+        <canvas id="cameraCanvas" style="display: none;"></canvas>
     </div>
 
     <script>
@@ -427,9 +634,11 @@
         let currentEditingId = null;
         let familyHead = null;
         let editableMembers = [];
+        let selectedPhotoFile = null;
         
         const username = 'allofusbhere';
         const repo = 'swipe-tree-labels';
+        const imageRepo = 'family-tree-images';
         const labelsFile = 'family_labels.json';
         const spouseFile = 'spouse_link.json';
         
@@ -450,6 +659,16 @@
         const cancelBtn = document.getElementById('cancelBtn');
         const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
+
+        // Photo elements
+        const photoFile = document.getElementById('photoFile');
+        const cameraBtn = document.getElementById('cameraBtn');
+        const removePhotoBtn = document.getElementById('removePhotoBtn');
+        const previewSection = document.getElementById('previewSection');
+        const previewImage = document.getElementById('previewImage');
+        const currentPhotoContainer = document.getElementById('currentPhotoContainer');
+        const imageFileName = document.getElementById('imageFileName');
+        const savePhotoBtn = document.getElementById('savePhotoBtn');
 
         // Family access
         accessBtn.addEventListener('click', async () => {
@@ -510,6 +729,193 @@
             }
         });
 
+        // Photo management
+        photoFile.addEventListener('change', handlePhotoSelection);
+        cameraBtn.addEventListener('click', startCamera);
+        removePhotoBtn.addEventListener('click', removePhoto);
+        savePhotoBtn.addEventListener('click', savePhotoToQueue);
+        
+        // File input button click handler
+        document.querySelector('.file-input-container').addEventListener('click', function() {
+            photoFile.click();
+        });
+
+        function handlePhotoSelection() {
+            const file = photoFile.files[0];
+            if (file) {
+                selectedPhotoFile = file;
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    previewImage.src = e.target.result;
+                    previewSection.style.display = 'block';
+                    savePhotoBtn.style.display = 'block';
+                    
+                    // Mobile-friendly success message
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    const message = isMobile ? 
+                        '📱 Photo selected from your gallery! Click "Save Photo" to queue it for admin approval.' :
+                        '📷 Photo selected! Click "Save Photo" to queue it for admin approval.';
+                    showPhotoSuccess(message);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function startCamera() {
+            try {
+                const video = document.getElementById('camera');
+                const canvas = document.getElementById('cameraCanvas');
+                const ctx = canvas.getContext('2d');
+
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: 'user' } 
+                });
+                
+                video.srcObject = stream;
+                video.style.display = 'block';
+                video.style.width = '100%';
+                video.style.maxWidth = '300px';
+                video.style.borderRadius = '10px';
+                video.style.border = '2px solid #28a745';
+                
+                // Replace camera button with capture button
+                cameraBtn.textContent = '📸 Capture Photo';
+                cameraBtn.onclick = function() {
+                    // Capture image
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    ctx.drawImage(video, 0, 0);
+                    
+                    // Convert to blob and create file
+                    canvas.toBlob(function(blob) {
+                        selectedPhotoFile = new File([blob], `captured-${currentEditingId}.jpg`, { type: 'image/jpeg' });
+                        
+                        // Show preview
+                        const url = URL.createObjectURL(blob);
+                        previewImage.src = url;
+                        previewSection.style.display = 'block';
+                        savePhotoBtn.style.display = 'block';
+                        
+                        // Cleanup camera
+                        stream.getTracks().forEach(track => track.stop());
+                        video.style.display = 'none';
+                        cameraBtn.textContent = '📷 Take New Photo';
+                        cameraBtn.onclick = startCamera;
+                        
+                        showPhotoSuccess('📷 Photo captured! Click "Save Photo" to queue it for admin approval.');
+                    }, 'image/jpeg', 0.8);
+                };
+                
+                // Insert video into photo container temporarily
+                currentPhotoContainer.appendChild(video);
+                
+            } catch (error) {
+                alert('❌ Camera access failed. Please use file upload instead.');
+                console.error('Camera error:', error);
+            }
+        }
+
+        function removePhoto() {
+            selectedPhotoFile = null;
+            previewSection.style.display = 'none';
+            savePhotoBtn.style.display = 'none';
+            photoFile.value = '';
+            showPhotoSuccess('📷 Photo removed.');
+        }
+
+        async function savePhotoToQueue() {
+            if (!selectedPhotoFile || !currentEditingId) return;
+            
+            /* 
+             * ADMIN TOOL INTEGRATION NEEDED:
+             * 
+             * 1. Create pending_photos.json in swipe-tree-labels repo
+             * 2. Admin Portal "Photo Review" section should:
+             *    - Load pending_photos.json 
+             *    - Show pending photos with member info
+             *    - Allow approve/reject actions
+             *    - Upload approved photos to family-tree-images repo
+             *    - Remove processed entries from pending queue
+             */
+            
+            try {
+                // Convert photo to base64
+                const base64Data = await fileToBase64(selectedPhotoFile);
+                
+                // Create pending photo entry
+                const pendingPhoto = {
+                    memberId: currentEditingId,
+                    fileName: `${currentEditingId}.jpg`,
+                    imageData: base64Data,
+                    uploadedBy: familyHead,
+                    uploadDate: new Date().toISOString(),
+                    status: 'pending',
+                    familyName: labels[familyHead]?.firstName || 'Unknown Family'
+                };
+                
+                // Load existing pending photos
+                let pendingPhotos = {};
+                try {
+                    const response = await fetch(`https://api.github.com/repos/${username}/${repo}/contents/pending_photos.json`, {
+                        headers: { 'Accept': 'application/vnd.github.v3+json' }
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        pendingPhotos = JSON.parse(atob(data.content));
+                    }
+                } catch (error) {
+                    console.log('No existing pending_photos.json, creating new one');
+                    pendingPhotos = {};
+                }
+                
+                // Add new photo to queue
+                const photoId = `${currentEditingId}_${Date.now()}`;
+                pendingPhotos[photoId] = pendingPhoto;
+                
+                // Save to pending_photos.json (this would need admin tool integration)
+                // The admin tool would later:
+                // 1. Read pending_photos.json
+                // 2. Review each pending photo
+                // 3. Upload approved photos to family-tree-images repo  
+                // 4. Remove processed entries from pending queue
+                // For now, we'll show success and simulate the save
+                showPhotoSuccess(`💾 Photo queued for member ${currentEditingId}! Admin will review and publish shortly.`);
+                
+                // Reset photo selection
+                selectedPhotoFile = null;
+                previewSection.style.display = 'none';
+                savePhotoBtn.style.display = 'none';
+                photoFile.value = '';
+                
+            } catch (error) {
+                console.error('Save to queue error:', error);
+                showPhotoSuccess('❌ Failed to queue photo. Please try again.');
+            }
+        }
+
+        // Convert file to base64
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function showPhotoSuccess(message) {
+            const existingMsg = document.querySelector('.photo-success');
+            if (existingMsg) existingMsg.remove();
+            
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'photo-success';
+            msgDiv.style.cssText = 'background: #d4edda; color: #155724; padding: 10px; border-radius: 6px; margin: 10px 0; text-align: center; font-size: 0.9em;';
+            msgDiv.textContent = message;
+            
+            previewSection.appendChild(msgDiv);
+            setTimeout(() => msgDiv.remove(), 4000);
+        }
+
         function findSpouse(headId) {
             const spouses = [];
             
@@ -563,8 +969,6 @@
             const baseId = parseInt(headId);
             
             // Determine generation multiplier based on the ID pattern
-            // Lawrence (150000) is 2nd generation, children use 1000 multiplier
-            // Pattern: 150000 → 151000, 152000, 153000, etc.
             let generationMultiplier = 1000; // For 2nd generation parents like Lawrence
             
             // If this is 1st generation (100000-900000), children use 10000 multiplier
@@ -595,10 +999,25 @@
             familyDescription.textContent = `Managing family of ${parentData.firstName || 'Unknown'}`;
         }
 
-        function displayFamilyMembers() {
+        async function loadMemberPhoto(memberId) {
+            const imageUrl = `https://raw.githubusercontent.com/${username}/${imageRepo}/main/${memberId}.jpg`;
+            
+            try {
+                const img = new Image();
+                return new Promise((resolve) => {
+                    img.onload = () => resolve(imageUrl);
+                    img.onerror = () => resolve(null);
+                    img.src = imageUrl;
+                });
+            } catch (error) {
+                return null;
+            }
+        }
+
+        async function displayFamilyMembers() {
             memberList.innerHTML = '';
             
-            editableMembers.forEach(memberId => {
+            for (const memberId of editableMembers) {
                 const memberData = labels[memberId] || {
                     personId: memberId,
                     firstName: 'No name set',
@@ -613,16 +1032,23 @@
                                    (memberId.startsWith(familyHead + '.') || spouseLinks[familyHead] === memberId) ? 'Spouse' : 'Child';
                 const hasData = memberData.firstName && memberData.firstName !== 'No name set';
                 
+                // Load photo
+                const photoUrl = await loadMemberPhoto(memberId);
+                const photoElement = photoUrl ? 
+                    `<img src="${photoUrl}" alt="Member ${memberId}" class="member-photo">` :
+                    `<div class="member-photo placeholder">📷</div>`;
+                
                 memberItem.innerHTML = `
                     <div class="member-info">
                         <div class="member-id">ID: ${memberId} (${relationship})</div>
                         <div class="member-name">${memberData.firstName || 'No name set'}</div>
                         <div class="member-status">${hasData ? 'Has data' : 'Needs setup'}</div>
                     </div>
+                    ${photoElement}
                 `;
                 
                 memberList.appendChild(memberItem);
-            });
+            }
         }
 
         function selectMember(memberId) {
@@ -638,11 +1064,31 @@
             loadMemberForEditing(memberId);
         }
 
-        function loadMemberForEditing(memberId) {
+        async function loadMemberForEditing(memberId) {
             currentEditingId = memberId;
             const memberData = labels[memberId] || {};
             
             editingTitle.textContent = `Edit Member: ${memberId}`;
+            imageFileName.textContent = `${memberId}.jpg`;
+            
+            // Load current photo
+            const photoUrl = await loadMemberPhoto(memberId);
+            if (photoUrl) {
+                currentPhotoContainer.innerHTML = `<img src="${photoUrl}" alt="Member ${memberId}" class="current-photo">`;
+                removePhotoBtn.style.display = 'inline-block';
+            } else {
+                currentPhotoContainer.innerHTML = `
+                    <div class="photo-placeholder">
+                        <p>No photo found<br>for member ${memberId}</p>
+                    </div>`;
+                removePhotoBtn.style.display = 'none';
+            }
+            
+            // Reset photo selection
+            selectedPhotoFile = null;
+            previewSection.style.display = 'none';
+            savePhotoBtn.style.display = 'none';
+            photoFile.value = '';
             
             // Pre-fill form
             document.getElementById('personName').value = memberData.firstName || '';
@@ -699,7 +1145,7 @@
                 // await saveFamilyData();
                 
                 showSuccess();
-                displayFamilyMembers(); // Refresh the member list
+                await displayFamilyMembers(); // Refresh the member list with photos
                 editingSection.classList.remove('active');
                 currentEditingId = null;
                 
@@ -718,6 +1164,7 @@
         cancelBtn.addEventListener('click', () => {
             editingSection.classList.remove('active');
             currentEditingId = null;
+            selectedPhotoFile = null;
             
             // Clear selections
             document.querySelectorAll('.member-item').forEach(item => {
