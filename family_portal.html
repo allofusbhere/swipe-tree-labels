@@ -545,7 +545,7 @@
                     
                     <div class="photo-actions">
                         <div class="file-input-container">
-                            <input type="file" id="photoFile" accept="image/*" capture="environment">
+                            <input type="file" id="photoFile" accept="image/*">
                             <button class="photo-btn">📱 Choose from Photos</button>
                         </div>
                         <button class="photo-btn" id="cameraBtn">📷 Take New Photo</button>
@@ -745,16 +745,32 @@
                 const canvas = document.getElementById('cameraCanvas');
                 const ctx = canvas.getContext('2d');
 
+                // Request camera access - prefer front camera on mobile
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: 'user' } 
+                    video: { 
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
                 });
                 
                 video.srcObject = stream;
                 video.style.display = 'block';
                 video.style.width = '100%';
                 video.style.maxWidth = '300px';
+                video.style.height = 'auto';
                 video.style.borderRadius = '10px';
                 video.style.border = '2px solid #28a745';
+                video.style.backgroundColor = '#000';
+                
+                // Clear the photo container and add video
+                currentPhotoContainer.innerHTML = '';
+                currentPhotoContainer.appendChild(video);
+                
+                // Wait for video to start playing
+                video.onloadedmetadata = () => {
+                    video.play();
+                };
                 
                 // Replace camera button with capture button
                 cameraBtn.textContent = '📸 Capture Photo';
@@ -777,6 +793,14 @@
                         // Cleanup camera
                         stream.getTracks().forEach(track => track.stop());
                         video.style.display = 'none';
+                        
+                        // Restore photo placeholder
+                        currentPhotoContainer.innerHTML = `
+                            <div class="photo-placeholder">
+                                <p>Photo captured!<br>See preview below</p>
+                            </div>`;
+                        
+                        // Reset button
                         cameraBtn.textContent = '📷 Take New Photo';
                         cameraBtn.onclick = startCamera;
                         
@@ -784,11 +808,8 @@
                     }, 'image/jpeg', 0.8);
                 };
                 
-                // Insert video into photo container temporarily
-                currentPhotoContainer.appendChild(video);
-                
             } catch (error) {
-                alert('❌ Camera access failed. Please use file upload instead.');
+                alert('❌ Camera access failed. Please use "Choose from Photos" instead.');
                 console.error('Camera error:', error);
             }
         }
