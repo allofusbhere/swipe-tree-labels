@@ -166,29 +166,6 @@
             background: #d4edda;
         }
 
-        .member-item.auto-created {
-            border-left: 4px solid #ffc107;
-            background: #fff8e1;
-        }
-
-        .member-photo {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid #dee2e6;
-            margin-left: 10px;
-        }
-
-        .member-photo.placeholder {
-            background: #f8f9fa;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #6c757d;
-            font-size: 12px;
-        }
-
         .member-info {
             flex: 1;
         }
@@ -202,11 +179,6 @@
             color: #28a745;
             font-size: 0.9em;
             margin-top: 2px;
-        }
-
-        .member-name.needs-info {
-            color: #856404;
-            font-style: italic;
         }
 
         .member-status {
@@ -259,12 +231,18 @@
             text-align: center;
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn-primary {
             background: #28a745;
             color: white;
         }
 
-        .btn-primary:hover {
+        .btn-primary:hover:not(:disabled) {
             background: #218838;
             transform: translateY(-1px);
         }
@@ -274,7 +252,7 @@
             color: white;
         }
 
-        .btn-secondary:hover {
+        .btn-secondary:hover:not(:disabled) {
             background: #5a6268;
         }
 
@@ -283,7 +261,7 @@
             color: white;
         }
 
-        .btn-family:hover {
+        .btn-family:hover:not(:disabled) {
             background: #138496;
         }
 
@@ -302,17 +280,6 @@
         .editing-section h4 {
             color: #495057;
             margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .auto-create-notice {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            color: #856404;
-            font-size: 0.9em;
             text-align: center;
         }
 
@@ -341,6 +308,10 @@
             text-align: center;
             padding: 12px;
             color: #666;
+        }
+
+        .loading.active {
+            display: block;
         }
 
         .loading::after {
@@ -428,10 +399,6 @@
             <div class="editing-section" id="editingSection">
                 <h4 id="editingTitle">Edit Family Member</h4>
                 
-                <div id="autoCreateNotice" class="auto-create-notice" style="display: none;">
-                    📸 This family member was detected from their photo. Please add their name and location below.
-                </div>
-                
                 <form id="labelForm">
                     <div class="form-group">
                         <label for="personName">Name</label>
@@ -450,6 +417,7 @@
 
                     <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
                     <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <div class="loading" id="loadingSave">Saving changes</div>
                 </form>
             </div>
 
@@ -469,11 +437,9 @@
         let currentEditingId = null;
         let familyHead = null;
         let editableMembers = [];
-        let autoCreatedMembers = [];
         
         const username = 'allofusbhere';
         const repo = 'swipe-tree-labels';
-        const imageRepo = 'family-tree-images';
         const labelsFile = 'family_labels.json';
         
         // Elements
@@ -490,10 +456,11 @@
         const editingSection = document.getElementById('editingSection');
         const editingTitle = document.getElementById('editingTitle');
         const labelForm = document.getElementById('labelForm');
+        const saveBtn = document.getElementById('saveBtn');
         const cancelBtn = document.getElementById('cancelBtn');
+        const loadingSave = document.getElementById('loadingSave');
         const successMessage = document.getElementById('successMessage');
         const errorMessage = document.getElementById('errorMessage');
-        const autoCreateNotice = document.getElementById('autoCreateNotice');
 
         // Family access
         accessBtn.addEventListener('click', async () => {
@@ -505,7 +472,7 @@
                 return;
             }
 
-            loadingAuth.style.display = 'block';
+            loadingAuth.classList.add('active');
             accessBtn.disabled = true;
 
             try {
@@ -525,8 +492,8 @@
                     if (labels[parentId] && labels[parentId].family_password === password) {
                         familyHead = parentId;
                         
-                        // Calculate editable family members with auto-creation
-                        editableMembers = await calculateNuclearFamilyWithAutoCreate(familyHead);
+                        // Calculate editable family members
+                        editableMembers = calculateNuclearFamily(familyHead);
                         
                         connectionStatus.textContent = `Connected as family ${parentId}`;
                         connectionStatus.className = 'status connected';
@@ -542,114 +509,48 @@
                     throw new Error(`Failed to load family data: ${response.status}`);
                 }
             } catch (error) {
-                alert(`Access failed: ${error.message}`);
+                showError(`Access failed: ${error.message}`);
                 connectionStatus.textContent = 'Family access failed';
                 connectionStatus.className = 'status disconnected';
             } finally {
-                loadingAuth.style.display = 'none';
+                loadingAuth.classList.remove('active');
                 accessBtn.disabled = false;
             }
         });
 
-        // Check if image exists for a family member ID
-        async function checkImageExists(memberId) {
-            const imageUrl = `https://raw.githubusercontent.com/${username}/${imageRepo}/main/${memberId}.jpg`;
-            
-            try {
-                const response = await fetch(imageUrl, { method: 'HEAD' });
-                return response.ok;
-            } catch (error) {
-                return false;
-            }
-        }
-
-        // Auto-create placeholder record for family member with image
-        function autoCreateFamilyMember(memberId) {
-            const placeholderRecord = {
-                personId: memberId,
-                firstName: "Name needed",
-                lastName: "",
-                birthDate: "",
-                location: "Location needed",
-                relationship: "family",
-                notes: "",
-                autoCreated: true,
-                createdDate: new Date().toISOString(),
-                lastUpdated: new Date().toISOString()
-            };
-            
-            labels[memberId] = placeholderRecord;
-            autoCreatedMembers.push(memberId);
-            console.log(`Auto-created placeholder record for ${memberId}`);
-        }
-
-        // Enhanced nuclear family calculation with auto-creation
-        async function calculateNuclearFamilyWithAutoCreate(headId) {
+        function calculateNuclearFamily(headId) {
             const members = [headId]; // Start with family head
-            autoCreatedMembers = []; // Reset auto-created tracking
             
             // Calculate children using correct generation multiplier system
             const baseId = parseInt(headId);
             
             // Determine generation multiplier based on the ID pattern
-            let generationMultiplier = 1000; // For 2nd generation parents like Lawrence
+            let generationMultiplier = 1000; // Default for 2nd generation
             
-            // If this is 1st generation (100000-900000), children use 10000 multiplier
+            // If this is 1st generation (X00000), children use 10000 multiplier
             if (headId.endsWith('00000')) {
                 generationMultiplier = 10000;
             }
-            // If this is 3rd generation (151000-159000), children use 100 multiplier  
+            // If this is 3rd generation (X1000-X9000), children use 100 multiplier  
             else if (headId.endsWith('1000') || headId.endsWith('2000') || headId.endsWith('3000') || 
                      headId.endsWith('4000') || headId.endsWith('5000') || headId.endsWith('6000') ||
                      headId.endsWith('7000') || headId.endsWith('8000') || headId.endsWith('9000')) {
                 generationMultiplier = 100;
             }
-            
-            // Check for children (birth order 1-9) and auto-create if image exists
-            const imageCheckPromises = [];
-            const potentialChildIds = [];
-            
-            for (let birthOrder = 1; birthOrder <= 9; birthOrder++) {
-                const childId = (baseId + (birthOrder * generationMultiplier)).toString();
-                potentialChildIds.push(childId);
-                imageCheckPromises.push(checkImageExists(childId));
+            // If this is 4th generation (X1100-X1900), children use 10 multiplier
+            else if (headId.match(/\d{3}[1-9][1-9]0$/)) {
+                generationMultiplier = 10;
             }
             
-            // Wait for all image checks to complete
-            const imageResults = await Promise.all(imageCheckPromises);
-            
-            // Process results
-            for (let i = 0; i < potentialChildIds.length; i++) {
-                const childId = potentialChildIds[i];
-                const imageExists = imageResults[i];
-                
+            // Check for children (birth order 1-9)
+            for (let birthOrder = 1; birthOrder <= 9; birthOrder++) {
+                const childId = (baseId + (birthOrder * generationMultiplier)).toString();
                 if (labels[childId]) {
-                    // Record already exists
-                    members.push(childId);
-                } else if (imageExists) {
-                    // Image exists but no record - auto-create placeholder
-                    autoCreateFamilyMember(childId);
                     members.push(childId);
                 }
             }
             
             return members;
-        }
-
-        // Load member photo from GitHub
-        async function loadMemberPhoto(memberId) {
-            const imageUrl = `https://raw.githubusercontent.com/${username}/${imageRepo}/main/${memberId}.jpg`;
-            
-            try {
-                const img = new Image();
-                return new Promise((resolve) => {
-                    img.onload = () => resolve(imageUrl);
-                    img.onerror = () => resolve(null);
-                    img.src = imageUrl;
-                });
-            } catch (error) {
-                return null;
-            }
         }
 
         function displayFamilyInfo(parentId) {
@@ -658,10 +559,10 @@
             familyDescription.textContent = `Managing family of ${parentData.firstName || 'Unknown'}`;
         }
 
-        async function displayFamilyMembers() {
+        function displayFamilyMembers() {
             memberList.innerHTML = '';
             
-            for (const memberId of editableMembers) {
+            editableMembers.forEach(memberId => {
                 const memberData = labels[memberId] || {
                     personId: memberId,
                     firstName: 'No name set',
@@ -672,40 +573,19 @@
                 memberItem.className = 'member-item';
                 memberItem.onclick = () => selectMember(memberId);
                 
-                // Add auto-created styling
-                if (memberData.autoCreated) {
-                    memberItem.classList.add('auto-created');
-                }
-                
                 const relationship = memberId === familyHead ? 'You' : 'Child';
-                const hasData = memberData.firstName && memberData.firstName !== 'No name set' && memberData.firstName !== 'Name needed';
-                
-                // Special styling for auto-created records
-                let nameClass = 'member-name';
-                let statusText = hasData ? 'Has data' : 'Needs setup';
-                
-                if (memberData.autoCreated) {
-                    nameClass += ' needs-info';
-                    statusText = 'Auto-detected - needs info';
-                }
-
-                // Load photo
-                const photoUrl = await loadMemberPhoto(memberId);
-                const photoElement = photoUrl ? 
-                    `<img src="${photoUrl}" alt="Member ${memberId}" class="member-photo">` :
-                    `<div class="member-photo placeholder">📷</div>`;
+                const hasData = memberData.firstName && memberData.firstName !== 'No name set';
                 
                 memberItem.innerHTML = `
                     <div class="member-info">
                         <div class="member-id">ID: ${memberId} (${relationship})</div>
-                        <div class="${nameClass}">${memberData.firstName || 'No name set'}</div>
-                        <div class="member-status">${statusText}</div>
+                        <div class="member-name">${memberData.firstName || 'No name set'}</div>
+                        <div class="member-status">${hasData ? 'Has data' : 'Needs setup'}</div>
                     </div>
-                    ${photoElement}
                 `;
                 
                 memberList.appendChild(memberItem);
-            }
+            });
         }
 
         function selectMember(memberId) {
@@ -727,19 +607,9 @@
             
             editingTitle.textContent = `Edit Member: ${memberId}`;
             
-            // Show auto-create notice if applicable
-            if (memberData.autoCreated) {
-                autoCreateNotice.style.display = 'block';
-            } else {
-                autoCreateNotice.style.display = 'none';
-            }
-            
-            // Pre-fill form (clear "placeholder" values)
-            const firstName = (memberData.firstName === 'Name needed') ? '' : (memberData.firstName || '');
-            const location = (memberData.location === 'Location needed') ? '' : (memberData.location || '');
-            
-            document.getElementById('personName').value = firstName;
-            document.getElementById('location').value = location;
+            // Pre-fill form
+            document.getElementById('personName').value = memberData.firstName || '';
+            document.getElementById('location').value = memberData.location || '';
             document.getElementById('notes').value = memberData.notes || '';
             
             editingSection.classList.add('active');
@@ -750,7 +620,7 @@
             e.preventDefault();
             
             if (!currentEditingId) {
-                alert('No member selected for editing');
+                showError('No member selected for editing');
                 return;
             }
 
@@ -759,9 +629,14 @@
             const notes = document.getElementById('notes').value.trim();
 
             if (!personName || !location) {
-                alert('Please enter both name and location');
+                showError('Please enter both name and location');
                 return;
             }
+
+            // Show loading and disable form
+            loadingSave.classList.add('active');
+            saveBtn.disabled = true;
+            cancelBtn.disabled = true;
 
             // Create/update label data
             const labelData = {
@@ -775,13 +650,6 @@
                 lastUpdated: new Date().toISOString()
             };
 
-            // Preserve creation info for auto-created records
-            const existingData = labels[currentEditingId];
-            if (existingData && existingData.autoCreated) {
-                labelData.autoCreated = false; // No longer auto-created once edited
-                labelData.createdDate = existingData.createdDate;
-            }
-
             // Preserve existing password fields if this is the family head
             if (currentEditingId === familyHead && labels[currentEditingId]) {
                 const existing = labels[currentEditingId];
@@ -792,13 +660,14 @@
                 }
             }
 
+            // Update local data
             labels[currentEditingId] = labelData;
 
             try {
-                // For now, we'll simulate saving - in production this would use Netlify functions
-                // await saveFamilyData();
+                // Save to server via Netlify function
+                await saveFamilyData();
                 
-                showSuccess();
+                showSuccess('Family member updated successfully!');
                 displayFamilyMembers(); // Refresh the member list
                 editingSection.classList.remove('active');
                 currentEditingId = null;
@@ -809,8 +678,13 @@
                 });
                 
             } catch (error) {
-                showError();
+                showError(`Save failed: ${error.message}`);
                 console.error('Save error:', error);
+            } finally {
+                // Hide loading and re-enable form
+                loadingSave.classList.remove('active');
+                saveBtn.disabled = false;
+                cancelBtn.disabled = false;
             }
         });
 
@@ -818,7 +692,6 @@
         cancelBtn.addEventListener('click', () => {
             editingSection.classList.remove('active');
             currentEditingId = null;
-            autoCreateNotice.style.display = 'none';
             
             // Clear selections
             document.querySelectorAll('.member-item').forEach(item => {
@@ -826,21 +699,52 @@
             });
         });
 
-        function showSuccess() {
+        async function saveFamilyData() {
+            // Call your Netlify function to save family_labels.json
+            const response = await fetch('/.netlify/functions/save-family-data', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    familyHead: familyHead,
+                    labels: labels,
+                    timestamp: new Date().toISOString()
+                })
+            });
+
+            if (!response.ok) {
+                const error = await response.text();
+                throw new Error(error || 'Failed to save family data');
+            }
+
+            return await response.json();
+        }
+
+        function showSuccess(message) {
             errorMessage.style.display = 'none';
+            successMessage.textContent = message;
             successMessage.style.display = 'block';
             setTimeout(() => {
                 successMessage.style.display = 'none';
             }, 3000);
         }
 
-        function showError() {
+        function showError(message) {
             successMessage.style.display = 'none';
+            errorMessage.textContent = message;
             errorMessage.style.display = 'block';
             setTimeout(() => {
                 errorMessage.style.display = 'none';
             }, 3000);
         }
+
+        // Allow Enter key to trigger access
+        familyPasswordInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                accessBtn.click();
+            }
+        });
     </script>
 </body>
 </html>
