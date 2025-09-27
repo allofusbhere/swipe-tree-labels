@@ -171,6 +171,24 @@
             background: #fff8e1;
         }
 
+        .member-photo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #dee2e6;
+            margin-left: 10px;
+        }
+
+        .member-photo.placeholder {
+            background: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 12px;
+        }
+
         .member-info {
             flex: 1;
         }
@@ -618,16 +636,32 @@
             return members;
         }
 
+        // Load member photo from GitHub
+        async function loadMemberPhoto(memberId) {
+            const imageUrl = `https://raw.githubusercontent.com/${username}/${imageRepo}/main/${memberId}.jpg`;
+            
+            try {
+                const img = new Image();
+                return new Promise((resolve) => {
+                    img.onload = () => resolve(imageUrl);
+                    img.onerror = () => resolve(null);
+                    img.src = imageUrl;
+                });
+            } catch (error) {
+                return null;
+            }
+        }
+
         function displayFamilyInfo(parentId) {
             const parentData = labels[parentId];
             familyTitle.textContent = `Nuclear Family: ${parentId}`;
             familyDescription.textContent = `Managing family of ${parentData.firstName || 'Unknown'}`;
         }
 
-        function displayFamilyMembers() {
+        async function displayFamilyMembers() {
             memberList.innerHTML = '';
             
-            editableMembers.forEach(memberId => {
+            for (const memberId of editableMembers) {
                 const memberData = labels[memberId] || {
                     personId: memberId,
                     firstName: 'No name set',
@@ -654,6 +688,12 @@
                     nameClass += ' needs-info';
                     statusText = 'Auto-detected - needs info';
                 }
+
+                // Load photo
+                const photoUrl = await loadMemberPhoto(memberId);
+                const photoElement = photoUrl ? 
+                    `<img src="${photoUrl}" alt="Member ${memberId}" class="member-photo">` :
+                    `<div class="member-photo placeholder">📷</div>`;
                 
                 memberItem.innerHTML = `
                     <div class="member-info">
@@ -661,10 +701,11 @@
                         <div class="${nameClass}">${memberData.firstName || 'No name set'}</div>
                         <div class="member-status">${statusText}</div>
                     </div>
+                    ${photoElement}
                 `;
                 
                 memberList.appendChild(memberItem);
-            });
+            }
         }
 
         function selectMember(memberId) {
